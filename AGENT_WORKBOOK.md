@@ -414,9 +414,11 @@ Authoritative verification is CI on #20: clean `npm ci` + `npm run verify` on a 
 
 ### 2026-09-21 — Codex — cPanel Prisma lifecycle path
 
-**Status:** IN PROGRESS
+**Status:** DONE
 
 Removing Prisma generation from npm `postinstall` because CloudLinux executes that lifecycle from the separate Node virtual-environment `lib` directory, where the relative Prisma schema path does not exist. Adding an explicit schema-qualified command for execution from the deployed application root.
+
+**Validation:** `npm run verify` passed locally with Prisma Client 6.12.0, 24 tests, TypeScript, lint, and the production build. GitHub Actions run `35645710232` passed and republished `cpanel-release`.
 
 ### 2026-09-21 — Codex — Preserve cPanel Passenger control file
 
