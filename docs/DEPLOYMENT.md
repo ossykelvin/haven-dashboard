@@ -12,6 +12,8 @@ Every successful push to `main` replaces the `cpanel-release` branch with the ve
 
 The repository path must remain separate from the Node application root (`/home/koptryzt/njtest.koptechnology.co.uk`). The checked-in `.cpanel.yml` copies the prebuilt application into that root and touches Passenger's restart marker.
 
+The deployment descriptor also tolerates an existing checkout located directly in the application root by skipping copies whose source and destination are the same. `.htaccess` and `tmp/` are ignored because cPanel and Passenger manage them at runtime; they must not make the checked-out branch dirty.
+
 The deployment also creates `.htaccess` when it is absent. It does not replace an existing file, because CloudLinux Node.js Selector stores and removes its Passenger directives there when stopping or restarting the application.
 
 Because the repository is private, configure GitHub authentication for the cPanel clone using a read-only deploy key. Do not place a token in the clone URL or commit credentials.

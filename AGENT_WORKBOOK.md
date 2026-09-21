@@ -412,6 +412,12 @@ Authoritative verification is CI on #20: clean `npm ci` + `npm run verify` on a 
 
 ## Codex
 
+### 2026-09-21 — Codex — cPanel clean-tree compatibility
+
+**Status:** IN PROGRESS
+
+Ignoring cPanel-managed `.htaccess` and `tmp/` runtime state so Passenger does not make the Git checkout dirty. Making `.cpanel.yml` safe when the cPanel repository was checked out directly into the Node application root, while retaining the recommended separate-checkout deployment layout.
+
 ### 2026-09-21 — Codex — cPanel Prisma lifecycle path
 
 **Status:** DONE

@@ -3,9 +3,7 @@ deployment:
   tasks:
     - export DEPLOYPATH=$HOME/njtest.koptechnology.co.uk
     - /bin/mkdir -p "$DEPLOYPATH"
-    - /bin/cp -R .next "$DEPLOYPATH/"
-    - /bin/cp -R prisma "$DEPLOYPATH/"
-    - /bin/cp package.json package-lock.json next.config.ts server.js .env.example "$DEPLOYPATH/"
-    - /usr/bin/touch "$DEPLOYPATH/.htaccess"
-    - /bin/mkdir -p "$DEPLOYPATH/tmp"
-    - /usr/bin/touch "$DEPLOYPATH/tmp/restart.txt"
+    - /bin/bash -lc 'if [ "$(pwd -P)" != "$(cd "$HOME/njtest.koptechnology.co.uk" && pwd -P)" ]; then /bin/cp -R .next prisma "$HOME/njtest.koptechnology.co.uk/"; /bin/cp package.json package-lock.json next.config.ts server.js .env.example "$HOME/njtest.koptechnology.co.uk/"; fi'
+    - /usr/bin/touch "$HOME/njtest.koptechnology.co.uk/.htaccess"
+    - /bin/mkdir -p "$HOME/njtest.koptechnology.co.uk/tmp"
+    - /usr/bin/touch "$HOME/njtest.koptechnology.co.uk/tmp/restart.txt"
