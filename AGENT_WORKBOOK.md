@@ -414,9 +414,11 @@ Authoritative verification is CI on #20: clean `npm ci` + `npm run verify` on a 
 
 ### 2026-09-21 — Codex — Preserve cPanel Passenger control file
 
-**Status:** IN PROGRESS
+**Status:** DONE
 
 Updating the cPanel deployment descriptor to ensure the application root has a `.htaccess` file before CloudLinux Node.js Selector or Passenger attempts to stop or restart Haven. The deployment uses `touch`, so existing cPanel-managed Passenger directives are preserved.
+
+**Validation:** GitHub Actions run `35644829193` passed verification and republished `cpanel-release` with the `.htaccess` safeguard.
 
 ### 2026-09-21 — Codex — cPanel Git deployment branch
 
