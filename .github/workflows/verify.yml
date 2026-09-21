@@ -23,10 +23,10 @@ jobs:
 
     steps:
       - name: Check out the branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -44,13 +44,14 @@ jobs:
         shell: bash
         run: |
           mkdir -p release/haven-cpanel/docs
-          cp -R .next public prisma release/haven-cpanel/
+          cp -R .next prisma release/haven-cpanel/
+          if [ -d public ]; then cp -R public release/haven-cpanel/; fi
           cp package.json package-lock.json next.config.ts server.js .env.example release/haven-cpanel/
           cp docs/DEPLOYMENT.md release/haven-cpanel/docs/
 
       - name: Upload cPanel package
         if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: haven-cpanel-${{ github.sha }}
           path: release/haven-cpanel

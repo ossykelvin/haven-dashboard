@@ -7,7 +7,7 @@ GitHub Actions builds Haven because Namecheap's current shared-hosting image doe
 1. Open the repository's **Actions** tab.
 2. Open the latest successful **verify** run for `main`.
 3. Download the `haven-cpanel-<commit>` artifact.
-4. Extract it locally. The extracted package must contain `.next`, `public`, `prisma`, `package.json`, `package-lock.json`, `next.config.ts`, and `server.js`.
+4. Extract it locally. The extracted package must contain `.next`, `prisma`, `package.json`, `package-lock.json`, `next.config.ts`, and `server.js`. It also contains `public` when the application has public assets.
 
 Do not upload a local `.env`, `node_modules`, `uploads`, or a Windows-built `.next` directory.
 
