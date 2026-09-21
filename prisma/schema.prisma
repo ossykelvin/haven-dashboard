@@ -1,0 +1,1276 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum AppRole {
+  admin
+  manager
+  staff
+  shift_lead
+  admissions
+  clerk
+}
+
+model AuthUser {
+  id           String   @id @db.Char(36)
+  email        String   @unique @db.VarChar(191)
+  passwordHash String   @map("password_hash") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_auth_user")
+}
+
+model Organization {
+  id                 String   @id @db.Char(36)
+  name               String   @db.Text
+  address            String?  @db.Text
+  phone              String?  @db.Text
+  email              String?  @db.Text
+  website            String?  @db.Text
+  cqcId              String?  @map("cqc_id") @db.Text
+  logoUrl            String?  @map("logo_url") @db.Text
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  refNo              String?  @map("ref_no") @db.VarChar(64)
+  mfaRequired        Boolean  @default(false) @map("mfa_required")
+  passwordMinLength  Int      @default(12) @map("password_min_length")
+  allowSelfProvision Boolean  @default(false) @map("allow_self_provision")
+  emailFromName      String?  @map("email_from_name") @db.Text
+  emailReplyTo       String?  @map("email_reply_to") @db.Text
+
+  @@map("tbl_organization")
+}
+
+model Campus {
+  id                          String    @id @db.Char(36)
+  name                        String    @db.Text
+  address                     String?   @db.Text
+  phone                       String?   @db.Text
+  email                       String?   @db.Text
+  status                      String    @db.VarChar(32)
+  createdAt                   DateTime  @default(now()) @map("created_at")
+  updatedAt                   DateTime  @updatedAt @map("updated_at")
+  deletedAt                   DateTime? @map("deleted_at")
+  isHeadOffice                Boolean   @default(false) @map("is_head_office")
+  refNo                       String?   @map("ref_no") @db.VarChar(64)
+  organizationId              String    @map("organization_id") @db.Char(36)
+  notificationEmails          String?   @map("notification_emails") @db.Text
+  appointmentReminderEnabled  Boolean   @default(false) @map("appointment_reminder_enabled")
+  appointmentReminderDay1     Int       @default(7) @map("appointment_reminder_day1")
+  appointmentReminderDay2     Int       @default(3) @map("appointment_reminder_day2")
+  appointmentReminderDay3     Int       @default(1) @map("appointment_reminder_day3")
+
+  @@index([organizationId])
+  @@map("tbl_campus")
+}
+
+model Profile {
+  id                     String    @id @db.Char(36)
+  userId                 String    @unique @map("user_id") @db.Char(36)
+  fullName               String?   @map("full_name") @db.Text
+  avatarUrl              String?   @map("avatar_url") @db.Text
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  isActivated            Boolean   @default(true) @map("is_activated")
+  deletedAt              DateTime? @map("deleted_at")
+  campusId               String?   @map("campus_id") @db.Char(36)
+  staffId                String?   @map("staff_id") @db.Char(36)
+  accountType            String    @default("captive") @map("account_type") @db.VarChar(32)
+  refNo                  String?   @map("ref_no") @db.VarChar(64)
+  sessionTimeoutMinutes  Int       @default(30) @map("session_timeout_minutes")
+  mfaBypass              Boolean   @default(false) @map("mfa_bypass")
+  erasedAt               DateTime? @map("erased_at")
+
+  @@index([campusId])
+  @@map("tbl_profile")
+}
+
+model UserRole {
+  id     String  @id @db.Char(36)
+  userId String  @map("user_id") @db.Char(36)
+  role   AppRole
+  refNo  String? @map("ref_no") @db.VarChar(64)
+
+  @@index([userId])
+  @@map("tbl_user_role")
+}
+
+model UserCampusAccess {
+  id        String   @id @db.Char(36)
+  userId    String   @map("user_id") @db.Char(36)
+  campusId  String   @map("campus_id") @db.Char(36)
+  grantedBy String?  @map("granted_by") @db.Char(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, campusId])
+  @@map("tbl_user_campus_access")
+}
+
+model UserEmail {
+  userId     String   @id @map("user_id") @db.Char(36)
+  emailLower String   @map("email_lower") @db.VarChar(191)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("tbl_user_email")
+}
+
+model RoleDefinition {
+  name      String   @id @db.VarChar(32)
+  isProtected Boolean @default(false) @map("is_protected")
+  createdBy String?  @map("created_by") @db.Char(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("tbl_role_definition")
+}
+
+model RoleMenu {
+  id        String   @id @db.Char(36)
+  role      AppRole
+  menuKey   String   @map("menu_key") @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at")
+  refNo     String?  @map("ref_no") @db.VarChar(64)
+
+  @@unique([role, menuKey])
+  @@map("tbl_role_menu")
+}
+
+model MenuDefinition {
+  id        String   @id @db.Char(36)
+  menuKey   String   @unique @map("menu_key") @db.VarChar(64)
+  label     String   @db.Text
+  groupName String   @map("group_name") @db.VarChar(64)
+  createdBy String?  @map("created_by") @db.Char(36)
+  createdAt DateTime @default(now()) @map("created_at")
+  refNo     String?  @map("ref_no") @db.VarChar(64)
+
+  @@map("tbl_menu_definition")
+}
+
+model Asset {
+  id                    String    @id @db.Char(36)
+  name                  String    @db.Text
+  category              String    @db.VarChar(64)
+  location              String?   @db.Text
+  serialNumber          String?   @map("serial_number") @db.Text
+  purchaseDate          DateTime? @map("purchase_date") @db.Date
+  warrantyExpiry        DateTime? @map("warranty_expiry") @db.Date
+  status                String    @db.VarChar(64)
+  notes                 String?   @db.Text
+  createdBy             String?   @map("created_by") @db.Char(36)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+  purchaseCost          Decimal?  @map("purchase_cost") @db.Decimal(12, 2)
+  nextInspectionDate    DateTime? @map("next_inspection_date") @db.Date
+  maintenanceFrequency  String?   @map("maintenance_frequency") @db.VarChar(64)
+  campusId              String    @map("campus_id") @db.Char(36)
+  refNo                 String?   @map("ref_no") @db.VarChar(64)
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_asset")
+}
+
+model StaffMember {
+  id              String    @id @db.Char(36)
+  fullName        String    @map("full_name") @db.Text
+  email           String?   @db.Text
+  phone           String?   @db.Text
+  role            String    @db.VarChar(128)
+  department      String?   @db.VarChar(128)
+  employmentType  String?   @map("employment_type") @db.VarChar(64)
+  startDate       DateTime? @map("start_date") @db.Date
+  status          String    @db.VarChar(64)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  staffCode       String?   @map("staff_id") @db.VarChar(64)
+  campusId        String    @map("campus_id") @db.Char(36)
+  refNo           String?   @map("ref_no") @db.VarChar(64)
+  isMedCompetent  Boolean   @default(false) @map("is_med_competent")
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_staff")
+}
+
+model Resident {
+  id                        String    @id @db.Char(36)
+  fullName                  String    @map("full_name") @db.Text
+  dateOfBirth               String?   @map("date_of_birth") @db.Text
+  roomNumber                String?   @map("room_number") @db.VarChar(32)
+  admissionDate             DateTime? @map("admission_date") @db.Date
+  emergencyContactName      String?   @map("emergency_contact_name") @db.Text
+  emergencyContactPhone     String?   @map("emergency_contact_phone") @db.Text
+  medicalNotes              String?   @map("medical_notes") @db.Text
+  status                    String    @db.VarChar(64)
+  createdAt                 DateTime  @default(now()) @map("created_at")
+  updatedAt                 DateTime  @updatedAt @map("updated_at")
+  deletedAt                 DateTime? @map("deleted_at")
+  campusId                  String    @map("campus_id") @db.Char(36)
+  refNo                     String?   @map("ref_no") @db.VarChar(64)
+  residentCode              String?   @map("resident_id") @db.VarChar(64)
+  emergencyContactNameHash  String?   @map("emergency_contact_name_hash") @db.Text
+  nhsNumber                 String?   @map("nhs_number") @db.Text
+  gpDetails                 String?   @map("gp_details") @db.Text
+  address                   String?   @db.Text
+  gender                    String?   @db.VarChar(32)
+  mobility                  String?   @db.Text
+  enquiryId                 String?   @map("enquiry_id") @db.Char(36)
+  dementiaStatus            String?   @map("dementia_status") @db.Text
+  currentSetting            String?   @map("current_setting") @db.Text
+  fundingType               String?   @map("funding_type") @db.VarChar(64)
+  riskFlags                 Json      @default("[]") @map("risk_flags")
+  roomId                    String?   @map("room_id") @db.Char(36)
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_resident")
+}
+
+model RotaShift {
+  id         String    @id @db.Char(36)
+  staffId    String    @map("staff_id") @db.Char(36)
+  shiftDate  DateTime  @map("shift_date") @db.Date
+  shiftStart String    @map("shift_start") @db.VarChar(8)
+  shiftEnd   String    @map("shift_end") @db.VarChar(8)
+  shiftType  String?   @map("shift_type") @db.VarChar(64)
+  notes      String?   @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  campusId   String?   @map("campus_id") @db.Char(36)
+  refNo      String?   @map("ref_no") @db.VarChar(64)
+
+  @@index([campusId, shiftDate])
+  @@map("tbl_rota")
+}
+
+model Incident {
+  id               String    @id @db.Char(36)
+  title            String    @db.Text
+  description      String?   @db.Text
+  incidentDate     DateTime  @map("incident_date")
+  severity         String    @db.VarChar(32)
+  status           String    @db.VarChar(32)
+  location         String?   @db.Text
+  reportedBy       String?   @map("reported_by") @db.Char(36)
+  assignedTo       String?   @map("assigned_to") @db.Char(36)
+  resolutionNotes  String?   @map("resolution_notes") @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+  campusId         String    @map("campus_id") @db.Char(36)
+  refNo            String?   @map("ref_no") @db.VarChar(64)
+  incidentType     String    @map("incident_type") @db.VarChar(64)
+  reporterName     String?   @map("reporter_name") @db.Text
+  witnessNames     String?   @map("witness_names") @db.Text
+  actionTaken      String?   @map("action_taken") @db.Text
+  notifyFamily     Boolean   @default(false) @map("notify_family")
+  notifyDoctor     Boolean   @default(false) @map("notify_doctor")
+  notifyManagement Boolean   @default(false) @map("notify_management")
+  residentId       String?   @map("resident_id") @db.Char(36)
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_incident")
+}
+
+model Risk {
+  id             String    @id @db.Char(36)
+  title          String    @db.Text
+  description    String?   @db.Text
+  category       String?   @db.VarChar(64)
+  likelihood     String?   @db.VarChar(32)
+  impact         String?   @db.VarChar(32)
+  riskLevel      String?   @map("risk_level") @db.VarChar(32)
+  status         String    @db.VarChar(32)
+  mitigation     String?   @db.Text
+  owner          String?   @db.Char(36)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+  campusId       String    @map("campus_id") @db.Char(36)
+  nextReviewDate DateTime? @map("next_review_date") @db.Date
+  reminder7dSent Boolean   @default(false) @map("reminder_7d_sent")
+  reminder1dSent Boolean   @default(false) @map("reminder_1d_sent")
+  refNo          String?   @map("ref_no") @db.VarChar(64)
+  reminder3dSent Boolean   @default(false) @map("reminder_3d_sent")
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_risk")
+}
+
+model ComplianceCheck {
+  id                   String    @id @db.Char(36)
+  title                String    @db.Text
+  category             String    @db.VarChar(64)
+  dueDate              DateTime  @map("due_date") @db.Date
+  completedDate        DateTime? @map("completed_date") @db.Date
+  status               String    @db.VarChar(64)
+  assignedTo           String?   @map("assigned_to") @db.Char(36)
+  notes                String?   @db.Text
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  reminderDaysBefore   Int       @default(7) @map("reminder_days_before")
+  escalationSent       Boolean   @default(false) @map("escalation_sent")
+  reminderSent         Boolean   @default(false) @map("reminder_sent")
+  dueNotificationSent  Boolean   @default(false) @map("due_notification_sent")
+  deletedAt            DateTime? @map("deleted_at")
+  campusId             String?   @map("campus_id") @db.Char(36)
+  reminder7dSent       Boolean   @default(false) @map("reminder_7d_sent")
+  reminder1dSent       Boolean   @default(false) @map("reminder_1d_sent")
+  refNo                String?   @map("ref_no") @db.VarChar(64)
+  reminder3dSent       Boolean   @default(false) @map("reminder_3d_sent")
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_compliance_check")
+}
+
+model Audit {
+  id            String    @id @db.Char(36)
+  title         String    @db.Text
+  auditDate     DateTime  @map("audit_date") @db.Date
+  auditor       String?   @db.Text
+  scope         String?   @db.Text
+  findings      String?   @db.Text
+  recommendations String? @db.Text
+  status        String    @db.VarChar(64)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+  campusId      String?   @map("campus_id") @db.Char(36)
+  cqcResponses  Json      @default("{}") @map("cqc_responses")
+  refNo         String?   @map("ref_no") @db.VarChar(64)
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_audit")
+}
+
+model Notification {
+  id            String   @id @db.Char(36)
+  userId        String   @map("user_id") @db.Char(36)
+  title         String   @db.Text
+  message       String   @db.Text
+  type          String   @db.VarChar(32)
+  referenceId   String?  @map("reference_id") @db.Char(36)
+  referenceType String?  @map("reference_type") @db.VarChar(64)
+  isRead        Boolean  @default(false) @map("is_read")
+  createdAt     DateTime @default(now()) @map("created_at")
+  refNo         String?  @map("ref_no") @db.VarChar(64)
+
+  @@index([userId, isRead])
+  @@map("tbl_notification")
+}
+
+model Maintenance {
+  id             String    @id @db.Char(36)
+  title          String    @db.Text
+  description    String?   @db.Text
+  category       String    @db.VarChar(64)
+  assetId        String?   @map("asset_id") @db.Char(36)
+  frequency      String    @db.VarChar(64)
+  lastCompleted  DateTime? @map("last_completed") @db.Date
+  nextDue        DateTime  @map("next_due") @db.Date
+  assignedTo     String?   @map("assigned_to") @db.Char(36)
+  status         String    @db.VarChar(64)
+  priority       String    @db.VarChar(32)
+  notes          String?   @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+  campusId       String?   @map("campus_id") @db.Char(36)
+  refNo          String?   @map("ref_no") @db.VarChar(64)
+  reminder7dSent Boolean   @default(false) @map("reminder_7d_sent")
+  reminder1dSent Boolean   @default(false) @map("reminder_1d_sent")
+  reminder3dSent Boolean   @default(false) @map("reminder_3d_sent")
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_maintenance")
+}
+
+model Training {
+  id              String    @id @db.Char(36)
+  title           String    @db.Text
+  category        String    @db.VarChar(64)
+  description     String?   @db.Text
+  frequency       String    @db.VarChar(64)
+  isMandatory     Boolean   @default(false) @map("is_mandatory")
+  applicableRoles Json?     @map("applicable_roles")
+  status          String    @db.VarChar(64)
+  deletedAt       DateTime? @map("deleted_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  externalLink    String?   @map("external_link") @db.Text
+  refNo           String?   @map("ref_no") @db.VarChar(64)
+
+  @@map("tbl_training")
+}
+
+model TrainingAssignment {
+  id          String    @id @db.Char(36)
+  trainingId  String    @map("training_id") @db.Char(36)
+  staffId     String    @map("staff_id") @db.Char(36)
+  assignedBy  String?   @map("assigned_by") @db.Char(36)
+  assignedAt  DateTime  @default(now()) @map("assigned_at")
+  dueDate     DateTime? @map("due_date") @db.Date
+  status      String    @db.VarChar(64)
+  completedAt DateTime? @map("completed_at")
+  notes       String?   @db.Text
+  campusId    String?   @map("campus_id") @db.Char(36)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  refNo       String?   @map("ref_no") @db.VarChar(64)
+
+  @@index([staffId, campusId])
+  @@map("tbl_training_assignment")
+}
+
+model Document {
+  id            String    @id @db.Char(36)
+  title         String    @db.Text
+  category      String    @db.VarChar(64)
+  documentType  String    @map("document_type") @db.VarChar(64)
+  relatedModule String?   @map("related_module") @db.VarChar(64)
+  relatedId     String?   @map("related_id") @db.Char(36)
+  filePath      String    @map("file_path") @db.Text
+  fileName      String    @map("file_name") @db.Text
+  fileSize      BigInt?   @map("file_size")
+  mimeType      String?   @map("mime_type") @db.VarChar(128)
+  issueDate     DateTime? @map("issue_date") @db.Date
+  expiryDate    DateTime? @map("expiry_date") @db.Date
+  notes         String?   @db.Text
+  uploadedBy    String?   @map("uploaded_by") @db.Char(36)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+  campusId      String?   @map("campus_id") @db.Char(36)
+  refNo         String?   @map("ref_no") @db.VarChar(64)
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_document")
+}
+
+model ChatConversation {
+  id        String   @id @db.Char(36)
+  name      String?  @db.Text
+  isGroup   Boolean  @default(false) @map("is_group")
+  createdBy String   @map("created_by") @db.Char(36)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  refNo     String?  @map("ref_no") @db.VarChar(64)
+
+  @@map("tbl_chat_conversation")
+}
+
+model ChatParticipant {
+  id             String   @id @db.Char(36)
+  conversationId String   @map("conversation_id") @db.Char(36)
+  userId         String   @map("user_id") @db.Char(36)
+  joinedAt       DateTime @default(now()) @map("joined_at")
+  lastReadAt     DateTime @default(now()) @map("last_read_at")
+  refNo          String?  @map("ref_no") @db.VarChar(64)
+
+  @@unique([conversationId, userId])
+  @@map("tbl_chat_participant")
+}
+
+model ChatMessage {
+  id             String   @id @db.Char(36)
+  conversationId String   @map("conversation_id") @db.Char(36)
+  senderId       String   @map("sender_id") @db.Char(36)
+  content        String   @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  refNo          String?  @map("ref_no") @db.VarChar(64)
+
+  @@index([conversationId, createdAt])
+  @@map("tbl_chat_message")
+}
+
+model EmailTemplate {
+  id          String   @id @db.Char(36)
+  name        String   @unique @db.VarChar(128)
+  displayName String   @map("display_name") @db.Text
+  subject     String   @db.Text
+  html        String   @db.Text
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdBy   String?  @map("created_by") @db.Char(36)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  refNo       String?  @map("ref_no") @db.VarChar(64)
+
+  @@map("tbl_email_template")
+}
+
+model EmailSendLog {
+  id             String   @id @db.Char(36)
+  messageId      String?  @map("message_id") @db.Text
+  templateName   String   @map("template_name") @db.VarChar(128)
+  recipientEmail String   @map("recipient_email") @db.VarChar(191)
+  status         String   @db.VarChar(32)
+  errorMessage   String?  @map("error_message") @db.Text
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("email_send_log")
+}
+
+model EmailSendState {
+  id                            Int       @id
+  retryAfterUntil               DateTime? @map("retry_after_until")
+  batchSize                     Int       @default(20) @map("batch_size")
+  sendDelayMs                   Int       @default(250) @map("send_delay_ms")
+  authEmailTtlMinutes           Int       @default(60) @map("auth_email_ttl_minutes")
+  transactionalEmailTtlMinutes  Int       @default(1440) @map("transactional_email_ttl_minutes")
+  updatedAt                     DateTime  @updatedAt @map("updated_at")
+
+  @@map("email_send_state")
+}
+
+model SuppressedEmail {
+  id        String   @id @db.Char(36)
+  email     String   @unique @db.VarChar(191)
+  reason    String   @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("suppressed_emails")
+}
+
+model EmailUnsubscribeToken {
+  id        String    @id @db.Char(36)
+  token     String    @unique @db.VarChar(191)
+  email     String    @unique @db.VarChar(191)
+  createdAt DateTime  @default(now()) @map("created_at")
+  usedAt    DateTime? @map("used_at")
+
+  @@map("email_unsubscribe_tokens")
+}
+
+model CqcCheck {
+  id        String    @id @db.Char(36)
+  category  String    @db.VarChar(64)
+  body      String    @map("text") @db.Text
+  sortOrder Int       @map("sort_order")
+  createdBy String?   @map("created_by") @db.Char(36)
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  refNo     String?   @map("ref_no") @db.VarChar(64)
+  campusId  String    @map("campus_id") @db.Char(36)
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_cqc_check")
+}
+
+model SavedReport {
+  id          String    @id @db.Char(36)
+  name        String    @db.Text
+  description String?   @db.Text
+  module      String    @db.VarChar(64)
+  config      Json
+  isShared    Boolean   @default(false) @map("is_shared")
+  createdBy   String    @map("created_by") @db.Char(36)
+  campusId    String?   @map("campus_id") @db.Char(36)
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  refNo       String?   @map("ref_no") @db.VarChar(64)
+
+  @@map("tbl_saved_report")
+}
+
+model Medication {
+  id                    String    @id @db.Char(36)
+  refNo                 String?   @map("ref_no") @db.VarChar(64)
+  residentId            String    @map("resident_id") @db.Char(36)
+  campusId              String    @map("campus_id") @db.Char(36)
+  medicineName          String    @map("medicine_name") @db.Text
+  strength              String?   @db.Text
+  form                  String    @db.VarChar(64)
+  dose                  String    @db.Text
+  route                 String    @db.VarChar(64)
+  frequency             String?   @db.Text
+  instructions          String?   @db.Text
+  prescriber            String?   @db.Text
+  startDate             DateTime  @map("start_date") @db.Date
+  endDate               DateTime? @map("end_date") @db.Date
+  reviewDate            DateTime? @map("review_date") @db.Date
+  isPrn                 Boolean   @default(false) @map("is_prn")
+  isControlled          Boolean   @default(false) @map("is_controlled")
+  isCovert              Boolean   @default(false) @map("is_covert")
+  monitoringRequired    String?   @map("monitoring_required") @db.Text
+  stockBalance          Decimal   @default(0) @map("stock_balance") @db.Decimal(12, 2)
+  reorderThreshold      Decimal   @default(0) @map("reorder_threshold") @db.Decimal(12, 2)
+  prnReason             String?   @map("prn_reason") @db.Text
+  prnMinIntervalMinutes Int?      @map("prn_min_interval_minutes")
+  prnMaxPer24h          Int?      @map("prn_max_per_24h")
+  status                String    @db.VarChar(32)
+  createdBy             String?   @map("created_by") @db.Char(36)
+  checkedBy             String?   @map("checked_by") @db.Char(36)
+  checkedAt             DateTime? @map("checked_at")
+  discontinuedAt        DateTime? @map("discontinued_at")
+  discontinuedReason    String?   @map("discontinued_reason") @db.Text
+  notes                 String?   @db.Text
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  @@index([campusId, residentId])
+  @@map("tbl_medication")
+}
+
+model MedicationSchedule {
+  id            String    @id @db.Char(36)
+  refNo         String?   @map("ref_no") @db.VarChar(64)
+  medicationId  String    @map("medication_id") @db.Char(36)
+  campusId      String?   @map("campus_id") @db.Char(36)
+  scheduledTime String    @map("scheduled_time") @db.VarChar(8)
+  doseOverride  String?   @map("dose_override") @db.Text
+  daysOfWeek    Json?     @map("days_of_week")
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  @@index([medicationId])
+  @@map("tbl_medication_schedule")
+}
+
+model MedicationAdministration {
+  id                 String    @id @db.Char(36)
+  refNo              String?   @map("ref_no") @db.VarChar(64)
+  medicationId       String    @map("medication_id") @db.Char(36)
+  scheduleId         String?   @map("schedule_id") @db.Char(36)
+  residentId         String    @map("resident_id") @db.Char(36)
+  campusId           String?   @map("campus_id") @db.Char(36)
+  dueAt              DateTime  @map("due_at")
+  administeredAt     DateTime? @map("administered_at")
+  doseGiven          String?   @map("dose_given") @db.Text
+  status             String    @db.VarChar(32)
+  reasonCode         String?   @map("reason_code") @db.VarChar(64)
+  notes              String?   @db.Text
+  administeredBy     String?   @map("administered_by") @db.Char(36)
+  witnessId          String?   @map("witness_id") @db.Char(36)
+  isLate             Boolean   @default(false) @map("is_late")
+  isPrn              Boolean   @default(false) @map("is_prn")
+  prnPainScoreBefore Int?      @map("prn_pain_score_before")
+  prnPainScoreAfter  Int?      @map("prn_pain_score_after")
+  prnFollowupDueAt   DateTime? @map("prn_followup_due_at")
+  prnOutcome         String?   @map("prn_outcome") @db.Text
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  reminderSentAt     DateTime? @map("reminder_sent_at")
+
+  @@index([campusId, dueAt])
+  @@map("tbl_medication_administration")
+}
+
+model MedicationStockMovement {
+  id           String   @id @db.Char(36)
+  refNo        String?  @map("ref_no") @db.VarChar(64)
+  medicationId String   @map("medication_id") @db.Char(36)
+  campusId     String?  @map("campus_id") @db.Char(36)
+  movementType String   @map("movement_type") @db.VarChar(32)
+  quantity     Decimal  @db.Decimal(12, 2)
+  balanceAfter Decimal? @map("balance_after") @db.Decimal(12, 2)
+  batchNumber  String?  @map("batch_number") @db.VarChar(64)
+  expiryDate   DateTime? @map("expiry_date") @db.Date
+  reason       String?  @db.Text
+  createdBy    String?  @map("created_by") @db.Char(36)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("tbl_medication_stock_movement")
+}
+
+model MedicationReview {
+  id             String    @id @db.Char(36)
+  refNo          String?   @map("ref_no") @db.VarChar(64)
+  residentId     String    @map("resident_id") @db.Char(36)
+  medicationId   String?   @map("medication_id") @db.Char(36)
+  campusId       String?   @map("campus_id") @db.Char(36)
+  reviewDate     DateTime  @map("review_date") @db.Date
+  nextReviewDate DateTime? @map("next_review_date") @db.Date
+  reviewer       String?   @db.Text
+  outcome        String?   @db.Text
+  notes          String?   @db.Text
+  createdBy      String?   @map("created_by") @db.Char(36)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  @@map("tbl_medication_review")
+}
+
+model MedicationIncident {
+  id                  String    @id @db.Char(36)
+  refNo               String?   @map("ref_no") @db.VarChar(64)
+  residentId          String?   @map("resident_id") @db.Char(36)
+  medicationId        String?   @map("medication_id") @db.Char(36)
+  administrationId    String?   @map("administration_id") @db.Char(36)
+  campusId            String?   @map("campus_id") @db.Char(36)
+  incidentType        String    @map("incident_type") @db.VarChar(64)
+  description         String    @db.Text
+  immediateAction     String?   @map("immediate_action") @db.Text
+  notifiedManager     Boolean?  @map("notified_manager")
+  notifiedGp          Boolean?  @map("notified_gp")
+  notifiedFamily      Boolean?  @map("notified_family")
+  safeguardingFlag    Boolean?  @map("safeguarding_flag")
+  investigationNotes  String?   @map("investigation_notes") @db.Text
+  outcome             String?   @db.Text
+  lessonsLearned      String?   @map("lessons_learned") @db.Text
+  status              String    @db.VarChar(32)
+  reportedBy          String?   @map("reported_by") @db.Char(36)
+  closedBy            String?   @map("closed_by") @db.Char(36)
+  closedAt            DateTime? @map("closed_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+
+  @@map("tbl_medication_incident")
+}
+
+model MedicationAuditLog {
+  id           String   @id @db.Char(36)
+  refNo        String?  @map("ref_no") @db.VarChar(64)
+  userId       String?  @map("user_id") @db.Char(36)
+  residentId   String?  @map("resident_id") @db.Char(36)
+  medicationId String?  @map("medication_id") @db.Char(36)
+  campusId     String?  @map("campus_id") @db.Char(36)
+  action       String   @db.VarChar(64)
+  previousValue Json?   @map("previous_value")
+  newValue     Json?    @map("new_value")
+  reason       String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("tbl_medication_audit_log")
+}
+
+model MedicationReminderSent {
+  id                    String   @id @db.Char(36)
+  medicationScheduleId  String   @map("medication_schedule_id") @db.Char(36)
+  scheduledDate         DateTime @map("scheduled_date") @db.Date
+  scheduledTime         String   @map("scheduled_time") @db.VarChar(8)
+  recipientsCount       Int      @map("recipients_count")
+  sentAt                DateTime @default(now()) @map("sent_at")
+  campusId              String   @map("campus_id") @db.Char(36)
+
+  @@map("tbl_medication_reminder_sent")
+}
+
+model LoginHistory {
+  id        String   @id @db.Char(36)
+  userId    String   @map("user_id") @db.Char(36)
+  eventType String   @map("event_type") @db.VarChar(32)
+  eventAt   DateTime @default(now()) @map("event_at")
+  userAgent String?  @map("user_agent") @db.Text
+  ipAddress String?  @map("ip_address") @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, eventAt])
+  @@map("tbl_login_history")
+}
+
+model ChangeAudit {
+  id         String   @id @db.Char(36)
+  refNo      String?  @unique @map("ref_no") @db.VarChar(64)
+  category   String   @db.VarChar(64)
+  menu       String   @db.VarChar(64)
+  tableName  String   @map("table_name") @db.VarChar(64)
+  recordId   String?  @map("record_id") @db.Char(36)
+  userId     String?  @map("user_id") @db.Char(36)
+  userEmail  String?  @map("user_email") @db.VarChar(191)
+  oldValues  Json?    @map("old_values")
+  newValues  Json?
+  eventAt    DateTime @default(now()) @map("event_at")
+  campusId   String?  @map("campus_id") @db.Char(36)
+
+  @@index([campusId, eventAt])
+  @@map("tbl_change_audit")
+}
+
+model Enquiry {
+  id                    String    @id @db.Char(36)
+  refNo                 String?   @unique @map("ref_no") @db.VarChar(64)
+  campusId              String    @map("campus_id") @db.Char(36)
+  enquiryType           String    @map("enquiry_type") @db.VarChar(64)
+  source                String    @db.VarChar(64)
+  dateReceived          DateTime  @map("date_received") @db.Date
+  urgency               String    @db.VarChar(64)
+  preferredMoveInDate   DateTime? @map("preferred_move_in_date") @db.Date
+  currentLocation       String?   @map("current_location") @db.Text
+  fundingType           String    @map("funding_type") @db.VarChar(64)
+  preferredRoomType     String?   @map("preferred_room_type") @db.VarChar(64)
+  generalNotes          String?   @map("general_notes") @db.Text
+  prospectFullName      String    @map("prospect_full_name") @db.Text
+  prospectDob           String?   @map("prospect_dob") @db.Text
+  prospectGender        String?   @map("prospect_gender") @db.VarChar(32)
+  prospectAddress       String?   @map("prospect_address") @db.Text
+  prospectCurrentSetting String?  @map("prospect_current_setting") @db.Text
+  prospectNhsNumber     String?   @map("prospect_nhs_number") @db.Text
+  prospectGpDetails     String?   @map("prospect_gp_details") @db.Text
+  prospectMobility      String?   @map("prospect_mobility") @db.Text
+  prospectDementia      String?   @map("prospect_dementia") @db.Text
+  prospectCareSummary   String?   @map("prospect_care_summary") @db.Text
+  prospectRiskFlags     Json?     @map("prospect_risk_flags")
+  stage                 String    @db.VarChar(64)
+  closedStatus          String?   @map("closed_status") @db.VarChar(64)
+  closedReason          String?   @map("closed_reason") @db.Text
+  closedAt              DateTime? @map("closed_at")
+  suitability           String?   @db.VarChar(64)
+  assignedTo            String?   @map("assigned_to") @db.Char(36)
+  nextFollowUpDate      DateTime? @map("next_follow_up_date") @db.Date
+  convertedResidentId   String?   @map("converted_resident_id") @db.Char(36)
+  convertedAt           DateTime? @map("converted_at")
+  createdBy             String?   @map("created_by") @db.Char(36)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  @@index([campusId, deletedAt])
+  @@map("tbl_enquiry")
+}
+
+model EnquiryContact {
+  id                    String    @id @db.Char(36)
+  enquiryId             String    @map("enquiry_id") @db.Char(36)
+  campusId              String?   @map("campus_id") @db.Char(36)
+  contactName           String    @map("contact_name") @db.Text
+  relationship          String?   @db.VarChar(64)
+  phone                 String?   @db.Text
+  email                 String?   @db.Text
+  preferredContactMethod String?  @map("preferred_contact_method") @db.VarChar(64)
+  bestTimeToContact     String?   @map("best_time_to_contact") @db.Text
+  decisionAuthority     String?   @map("decision_authority") @db.VarChar(64)
+  notes                 String?   @db.Text
+  createdBy             String?   @map("created_by") @db.Char(36)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  @@map("tbl_enquiry_contact")
+}
+
+model EnquiryCareNeed {
+  id                    String    @id @db.Char(36)
+  enquiryId             String    @unique @map("enquiry_id") @db.Char(36)
+  campusId              String?   @map("campus_id") @db.Char(36)
+  nursingCare           String?   @map("nursing_care") @db.Text
+  dementiaCare          String?   @map("dementia_care") @db.Text
+  oneToOneSupport       String?   @map("one_to_one_support") @db.Text
+  highFallsRisk         String?   @map("high_falls_risk") @db.Text
+  hoistTransfer         String?   @map("hoist_transfer") @db.Text
+  complexMedication     String?   @map("complex_medication") @db.Text
+  challengingBehaviour  String?   @map("challenging_behaviour") @db.Text
+  endOfLifeCare         String?   @map("end_of_life_care") @db.Text
+  emergencyPlacement    String?   @map("emergency_placement") @db.Text
+  safeguardingConcerns  String?   @map("safeguarding_concerns") @db.Text
+  specialistEquipment   String?   @map("specialist_equipment") @db.Text
+  notes                 String?   @db.Text
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  @@map("tbl_enquiry_care_need")
+}
+
+model EnquiryAssessment {
+  id                 String    @id @db.Char(36)
+  enquiryId          String    @map("enquiry_id") @db.Char(36)
+  campusId           String?   @map("campus_id") @db.Char(36)
+  assessmentDate     DateTime? @map("assessment_date")
+  assessmentType     String?   @map("assessment_type") @db.VarChar(64)
+  assessor           String?   @db.Text
+  location           String?   @db.Text
+  outcome            String?   @db.Text
+  notes              String?   @db.Text
+  documentsRequested String?   @map("documents_requested") @db.Text
+  nextAction         String?   @map("next_action") @db.Text
+  createdBy          String?   @map("created_by") @db.Char(36)
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  @@map("tbl_enquiry_assessment")
+}
+
+model EnquiryVisit {
+  id         String    @id @db.Char(36)
+  enquiryId  String    @map("enquiry_id") @db.Char(36)
+  campusId   String?   @map("campus_id") @db.Char(36)
+  visitAt    DateTime? @map("visit_at")
+  visitorName String?  @map("visitor_name") @db.Text
+  relationship String? @db.VarChar(64)
+  staffHost  String?   @map("staff_host") @db.Char(36)
+  status     String?   @db.VarChar(32)
+  feedback   String?   @db.Text
+  nextAction String?   @map("next_action") @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  @@map("tbl_enquiry_visit")
+}
+
+model EnquiryTask {
+  id          String    @id @db.Char(36)
+  enquiryId   String    @map("enquiry_id") @db.Char(36)
+  campusId    String?   @map("campus_id") @db.Char(36)
+  title       String    @db.Text
+  description String?   @db.Text
+  assignedTo  String?   @map("assigned_to") @db.Char(36)
+  dueDate     DateTime? @map("due_date") @db.Date
+  reminderAt  DateTime? @map("reminder_at")
+  priority    String?   @db.VarChar(32)
+  status      String?   @db.VarChar(32)
+  completedAt DateTime? @map("completed_at")
+  createdBy   String?   @map("created_by") @db.Char(36)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  residentId  String?   @map("resident_id") @db.Char(36)
+
+  @@map("tbl_enquiry_task")
+}
+
+model EnquiryDocument {
+  id          String    @id @db.Char(36)
+  enquiryId   String    @map("enquiry_id") @db.Char(36)
+  campusId    String    @map("campus_id") @db.Char(36)
+  category    String    @db.VarChar(64)
+  fileName    String    @map("file_name") @db.Text
+  storagePath String    @map("storage_path") @db.Text
+  mimeType    String?   @map("mime_type") @db.VarChar(128)
+  sizeBytes   BigInt?   @map("size_bytes")
+  uploadedBy  String?   @map("uploaded_by") @db.Char(36)
+  notes       String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@map("tbl_enquiry_document")
+}
+
+model EnquiryNote {
+  id        String    @id @db.Char(36)
+  enquiryId String    @map("enquiry_id") @db.Char(36)
+  campusId  String?   @map("campus_id") @db.Char(36)
+  body      String    @db.Text
+  author    String?   @db.Char(36)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@map("tbl_enquiry_note")
+}
+
+model EnquiryTimeline {
+  id          String   @id @db.Char(36)
+  enquiryId   String   @map("enquiry_id") @db.Char(36)
+  campusId    String?  @map("campus_id") @db.Char(36)
+  eventType   String   @map("event_type") @db.VarChar(64)
+  description String?  @db.Text
+  actor       String?  @db.Char(36)
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("tbl_enquiry_timeline")
+}
+
+model EnquiryFunding {
+  id                         String    @id @db.Char(36)
+  enquiryId                  String    @unique @map("enquiry_id") @db.Char(36)
+  campusId                   String?   @map("campus_id") @db.Char(36)
+  fundingType                String?   @map("funding_type") @db.VarChar(64)
+  weeklyFeeQuoted            Decimal?  @map("weekly_fee_quoted") @db.Decimal(12, 2)
+  topUpRequired              Boolean?  @map("top_up_required")
+  topUpContact               String?   @map("top_up_contact") @db.Text
+  financialAssessmentNeeded  Boolean?  @map("financial_assessment_needed")
+  fundingConfirmed           Boolean?  @map("funding_confirmed")
+  contractSent               Boolean?  @map("contract_sent")
+  depositRequired            Boolean?  @map("deposit_required")
+  notes                      String?   @db.Text
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
+  deletedAt                  DateTime? @map("deleted_at")
+
+  @@map("tbl_enquiry_funding")
+}
+
+model EnquiryRoomMatch {
+  id                 String    @id @db.Char(36)
+  enquiryId          String    @map("enquiry_id") @db.Char(36)
+  campusId           String?   @map("campus_id") @db.Char(36)
+  roomLabel          String    @map("room_label") @db.Text
+  assetId            String?   @map("asset_id") @db.Char(36)
+  availabilityStatus String?   @map("availability_status") @db.VarChar(32)
+  availableFrom      DateTime? @map("available_from") @db.Date
+  suitableCareType   String?   @map("suitable_care_type") @db.VarChar(64)
+  floorUnit          String?   @map("floor_unit") @db.VarChar(64)
+  notes              String?   @db.Text
+  isSelected         Boolean?  @map("is_selected")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+  roomId             String?   @map("room_id") @db.Char(36)
+
+  @@map("tbl_enquiry_room_match")
+}
+
+model Room {
+  id         String    @id @db.Char(36)
+  campusId   String    @map("campus_id") @db.Char(36)
+  roomNumber String    @map("room_number") @db.VarChar(32)
+  roomType   String?   @map("room_type") @db.VarChar(64)
+  floorUnit  String?   @map("floor_unit") @db.VarChar(64)
+  capacity   Int       @default(1)
+  status     String    @db.VarChar(32)
+  notes      String?   @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  @@unique([campusId, roomNumber])
+  @@map("tbl_room")
+}
+
+model CarePlanEntry {
+  id         String    @id @db.Char(36)
+  residentId String    @map("resident_id") @db.Char(36)
+  campusId   String?   @map("campus_id") @db.Char(36)
+  category   String    @db.VarChar(64)
+  status     String    @db.VarChar(64)
+  reviewDate DateTime? @map("review_date") @db.Date
+  body       String    @db.Text
+  author     String?   @db.Char(36)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  @@map("tbl_care_plan_entry")
+}
+
+model RiskAssessmentEntry {
+  id           String    @id @db.Char(36)
+  residentId   String    @map("resident_id") @db.Char(36)
+  campusId     String?   @map("campus_id") @db.Char(36)
+  riskCategory String    @map("risk_category") @db.VarChar(64)
+  severity     String    @db.VarChar(32)
+  status       String    @db.VarChar(32)
+  reviewDate   DateTime? @map("review_date") @db.Date
+  body         String    @db.Text
+  author       String?   @db.Char(36)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  likelihood   String?   @db.VarChar(32)
+  impact       String?   @db.VarChar(32)
+
+  @@map("tbl_risk_assessment_entry")
+}
+
+model MedicalNoteEntry {
+  id         String    @id @db.Char(36)
+  residentId String    @map("resident_id") @db.Char(36)
+  campusId   String?   @map("campus_id") @db.Char(36)
+  body       String    @db.Text
+  author     String?   @db.Char(36)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  @@map("tbl_medical_note_entry")
+}
+
+model ResidentDocument {
+  id          String    @id @db.Char(36)
+  residentId  String    @map("resident_id") @db.Char(36)
+  campusId    String?   @map("campus_id") @db.Char(36)
+  entryType   String    @map("entry_type") @db.VarChar(64)
+  entryId     String    @map("entry_id") @db.Char(36)
+  category    String    @db.VarChar(64)
+  fileName    String    @map("file_name") @db.Text
+  storagePath String    @map("storage_path") @db.Text
+  mimeType    String?   @map("mime_type") @db.VarChar(128)
+  sizeBytes   BigInt?   @map("size_bytes")
+  uploadedBy  String?   @map("uploaded_by") @db.Char(36)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@map("tbl_resident_document")
+}
+
+model ResidentAppointment {
+  id               String    @id @db.Char(36)
+  residentId       String    @map("resident_id") @db.Char(36)
+  campusId         String?   @map("campus_id") @db.Char(36)
+  appointmentType  String    @map("appointment_type") @db.VarChar(64)
+  title            String    @db.Text
+  providerName     String?   @map("provider_name") @db.Text
+  location         String?   @db.Text
+  appointmentDate  DateTime  @map("appointment_date") @db.Date
+  appointmentStart String    @map("appointment_start") @db.VarChar(8)
+  appointmentEnd   String?   @map("appointment_end") @db.VarChar(8)
+  status           String    @db.VarChar(32)
+  notes            String?   @db.Text
+  createdBy        String?   @map("created_by") @db.Char(36)
+  refNo            String?   @map("ref_no") @db.VarChar(64)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+  reminder1Sent    Boolean   @default(false) @map("reminder_1_sent")
+  reminder2Sent    Boolean   @default(false) @map("reminder_2_sent")
+  reminder3Sent    Boolean   @default(false) @map("reminder_3_sent")
+
+  @@map("tbl_resident_appointment")
+}
+
+model ShiftType {
+  id        String    @id @db.Char(36)
+  key       String    @unique @db.VarChar(64)
+  label     String    @db.Text
+  startTime String?   @map("start_time") @db.VarChar(8)
+  endTime   String?   @map("end_time") @db.VarChar(8)
+  color     String    @db.VarChar(32)
+  sortOrder Int       @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("tbl_shift_type")
+}
+
+model EmploymentType {
+  id          String   @id @db.Char(36)
+  key         String   @unique @db.VarChar(64)
+  label       String   @db.Text
+  weeklyHours Decimal? @map("weekly_hours") @db.Decimal(6, 2)
+  sortOrder   Int      @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_employment_type")
+}
+
+model SecurityPolicy {
+  id                    String    @id @db.Char(36)
+  minLength             Int       @map("min_length")
+  requireUppercase      Boolean   @map("require_uppercase")
+  requireLowercase      Boolean   @map("require_lowercase")
+  requireNumber         Boolean   @map("require_number")
+  requireSymbol         Boolean   @map("require_symbol")
+  maxAgeDays            Int?      @map("max_age_days")
+  preventReuseCount     Int       @map("prevent_reuse_count")
+  lockoutThreshold      Int       @map("lockout_threshold")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  updatedBy             String?   @map("updated_by") @db.Char(36)
+  auditRetentionMonths  Int       @map("audit_retention_months")
+  auditLastPurgedAt     DateTime? @map("audit_last_purged_at")
+
+  @@map("tbl_security_policy")
+}
+
+model PasswordHistory {
+  id           String   @id @db.Char(36)
+  userId       String   @map("user_id") @db.Char(36)
+  passwordHash String   @map("password_hash") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("tbl_password_history")
+}
+
+model MfaBackupCode {
+  id        String    @id @db.Char(36)
+  userId    String    @map("user_id") @db.Char(36)
+  codeHash  String    @map("code_hash") @db.Text
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("tbl_mfa_backup_code")
+}
+
+model MfaAuditLog {
+  id           String   @id @db.Char(36)
+  userId       String?  @map("user_id") @db.Char(36)
+  userEmail    String?  @map("user_email") @db.VarChar(191)
+  eventType    String   @map("event_type") @db.VarChar(64)
+  factorId     String?  @map("factor_id") @db.Text
+  factorType   String?  @map("factor_type") @db.VarChar(32)
+  friendlyName String?  @map("friendly_name") @db.Text
+  success      Boolean
+  ipAddress    String?  @map("ip_address") @db.VarChar(64)
+  userAgent    String?  @map("user_agent") @db.Text
+  detail       Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("tbl_mfa_audit_log")
+}
+
+model License {
+  id                   String    @id @db.Char(36)
+  maxCampuses          Int?      @map("max_campuses")
+  campusAllowance      Int       @map("campus_allowance")
+  maxResidents         Int?      @map("max_residents")
+  residentAllowance    Int       @map("resident_allowance")
+  lastCampusAlertAt    DateTime? @map("last_campus_alert_at")
+  lastResidentAlertAt  DateTime? @map("last_resident_alert_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  refNo                String?   @map("ref_no") @db.VarChar(64)
+  askccEnabled         Boolean   @default(false) @map("askcc_enabled")
+  askccProvider        String?   @map("askcc_provider") @db.VarChar(64)
+  askccModel           String?   @map("askcc_model") @db.VarChar(64)
+
+  @@map("tbl_license")
+}
+
+model RlsDenialLog {
+  id         String   @id @db.Char(36)
+  userId     String?  @map("user_id") @db.Char(36)
+  userEmail  String?  @map("user_email") @db.VarChar(191)
+  tableName  String   @map("table_name") @db.VarChar(64)
+  operation  String   @db.VarChar(16)
+  targetId   String?  @map("target_id") @db.Char(36)
+  payload    Json?
+  attemptedAt DateTime @default(now()) @map("attempted_at")
+
+  @@map("tbl_rls_denial_log")
+}
+
+model EdgeDenialLog {
+  id           String   @id @db.Char(36)
+  occurredAt   DateTime @default(now()) @map("occurred_at")
+  functionName String   @map("function_name") @db.VarChar(128)
+  httpStatus   Int      @map("http_status")
+  reason       String   @db.Text
+  userId       String?  @map("user_id") @db.Char(36)
+  userEmail    String?  @map("user_email") @db.VarChar(191)
+  role         String?  @db.VarChar(32)
+  campusId     String?  @map("campus_id") @db.Char(36)
+  eventType    String?  @map("event_type") @db.VarChar(64)
+  requestMeta  Json?    @map("request_meta")
+
+  @@map("tbl_edge_denial_log")
+}
+
+model AskccLog {
+  id           String   @id @db.Char(36)
+  userId       String   @map("user_id") @db.Char(36)
+  campusId     String?  @map("campus_id") @db.Char(36)
+  prompt       String   @db.Text
+  outcome      String   @db.Text
+  config       Json?
+  errors       Json?
+  model        String?  @db.VarChar(64)
+  inputTokens  Int?     @map("input_tokens")
+  outputTokens Int?     @map("output_tokens")
+  durationMs   Int?     @map("duration_ms")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("tbl_askcc_log")
+}
