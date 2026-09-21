@@ -2,7 +2,7 @@
 
 Shared running log for every AI agent working in this repository (Claude, Codex, Cursor).
 
-**Canonical git remote:** https://github.com/ossykelvin/rata.git (`origin`, branch `main`)
+**Canonical git remote:** https://github.com/ossykelvin/haven-dashboard.git (`origin`, branch `main`)
 
 `AGENTS.md` is the **engineering contract** — what you must and must not do.
 This workbook is the **activity log** — what has actually been done, by whom, and what is still open.
@@ -68,6 +68,7 @@ One line per agent. Keep it current — this is the first thing another agent re
 
 | Agent | Lane / ticket | Branch | Status |
 |---|---|---|---|
+| Codex | GitHub-to-cPanel build handoff | `main` | DONE |
 | Cursor | HAVEN-003 MySQL backend + auth | `cursor/haven-compliance-dashboard-e8e2` | DONE |
 | Cursor | HAVEN-002 CompliCare module expansion | `cursor/haven-compliance-dashboard-e8e2` | DONE |
 | Cursor | HAVEN-001 dashboard code refactor | `cursor/haven-compliance-dashboard-e8e2` | DONE |
@@ -413,9 +414,11 @@ Authoritative verification is CI on #20: clean `npm ci` + `npm run verify` on a 
 
 ### 2026-09-21 — Codex — GitHub-to-cPanel build handoff
 
-**Status:** IN PROGRESS
+**Status:** DONE
 
-Preparing Haven for a private `ossykelvin/haven-dashboard` repository with GitHub Actions verification and a downloadable cPanel deployment artifact. Scope: CI packaging, cPanel startup/runtime dependencies, deployment documentation, repository initialization, and publication. Secrets, `.env`, uploads, `node_modules`, and local build output remain excluded.
+Published the private `ossykelvin/haven-dashboard` repository and added a GitHub Actions pipeline that verifies Haven on Linux and uploads a downloadable cPanel package containing the compiled `.next` application, Prisma schema, exact dependency lockfile, environment template, and cPanel startup server. Production installs retain the Prisma CLI so cPanel generates an engine for its own Linux/OpenSSL environment; Prisma CLI and client are matched at 6.12.0, with zero production audit findings. Secrets, `.env`, uploads, `node_modules`, and local build output remain excluded.
+
+**Validation:** clean `npm ci`; `npm audit --omit=dev` reported zero vulnerabilities; `npm run verify` passed (ESLint, 24 Vitest tests, strict TypeScript, and Next.js production build); `server.js` returned HTTP 200 for `/login`; GitHub Actions run `35628040928` passed and its downloaded artifact contained `.next/BUILD_ID` plus every documented runtime file.
 
 ### 2026-08-16 — Codex — ADR-009 single-fence tolerance
 
