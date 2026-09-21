@@ -47,7 +47,7 @@ jobs:
           rm -rf .next/cache
           cp -R .next prisma release/haven-cpanel/
           if [ -d public ]; then cp -R public release/haven-cpanel/; fi
-          cp package.json package-lock.json next.config.ts server.js .env.example .gitignore .cpanel.yml release/haven-cpanel/
+          cp package.json package-lock.json next.config.mjs server.js .env.example .gitignore .cpanel.yml release/haven-cpanel/
           cp docs/DEPLOYMENT.md release/haven-cpanel/docs/
 
       - name: Upload cPanel package
@@ -73,18 +73,19 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: haven-cpanel-${{ github.sha }}
-          path: cpanel-release
+          path: cpanel-package
 
       - name: Publish prebuilt cPanel branch
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
+          git clone --branch cpanel-release "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" cpanel-release
           cd cpanel-release
-          git init --initial-branch=cpanel-release
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm -r --ignore-unmatch .
+          cp -a ../cpanel-package/. .
           git add --force .
           git commit -m "Build cPanel release for $GITHUB_SHA"
-          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git push --force origin HEAD:cpanel-release
+          git push origin cpanel-release

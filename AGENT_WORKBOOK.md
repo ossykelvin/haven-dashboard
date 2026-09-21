@@ -412,6 +412,12 @@ Authoritative verification is CI on #20: clean `npm ci` + `npm run verify` on a 
 
 ## Codex
 
+### 2026-09-21 — Codex — cPanel release delivery and runtime config
+
+**Status:** IN PROGRESS
+
+Changing `cpanel-release` publication from force-replaced orphan history to normal linear commits so cPanel's fast-forward-only Update from Remote can consume future builds. Replacing the TypeScript Next.js config with plain ESM to avoid production-time SWC config transpilation on Namecheap's older glibc host.
+
 ### 2026-09-21 — Codex — cPanel clean-tree compatibility
 
 **Status:** DONE
