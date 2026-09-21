@@ -414,9 +414,11 @@ Authoritative verification is CI on #20: clean `npm ci` + `npm run verify` on a 
 
 ### 2026-09-21 — Codex — cPanel Git deployment branch
 
-**Status:** IN PROGRESS
+**Status:** DONE
 
-Adding a valid `.cpanel.yml` and extending GitHub Actions to publish the verified Linux build to a dedicated `cpanel-release` branch for cPanel Git Version Control. The cPanel repository checkout remains separate from the Node application root so deployment does not mutate its own tracked working tree.
+Added a valid `.cpanel.yml` and extended GitHub Actions to publish the verified Linux build to a dedicated `cpanel-release` branch for cPanel Git Version Control. The deployment copies into `/home/koptryzt/njtest.koptechnology.co.uk` and touches Passenger's restart marker. The cPanel repository checkout remains separate from the Node application root so deployment does not mutate its own tracked working tree.
+
+**Validation:** GitHub Actions run `35630823058` passed both `verify` and `publish-cpanel-branch`. Remote branch `cpanel-release` exists and contains `.cpanel.yml`, `.next`, Prisma, the exact lockfile, `server.js`, and deployment documentation.
 
 ### 2026-09-21 — Codex — GitHub-to-cPanel build handoff
 
