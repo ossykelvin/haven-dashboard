@@ -153,6 +153,33 @@ Collapsed duplicated register-page, create-dialog, persistence, and domain-optio
 
 ## Claude
 
+### 2026-09-22 — Password reveal toggle on all password fields
+
+**Status:** DONE. Branch `claude/password-toggle`.
+
+New `src/components/ui/password-input.tsx` wraps the owned `Input` with a reveal toggle, used by
+the two `type="password"` fields in the codebase: sign-in (`login-form.tsx`) and create-user
+(`users-page.tsx`). No others exist.
+
+The toggle is a real `<button type="button">` so it is keyboard reachable and cannot submit the
+surrounding form. Visibility is local state, never persisted, and resets on remount — these screens
+are used on shared devices.
+
+Also set `autoComplete="new-password"` on the create-user field, which previously had none: a
+browser could autofill the signed-in admin's own password into a form that creates another account.
+
+**Verified in browser:** type flips password/text, accessible name flips Show/Hide, `aria-pressed`
+tracks state, Tab from the field reaches the button, and Return on the button does not submit the
+form.
+
+**Not verified:** real keyboard activation — the automation harness records zero click events for
+synthetic Enter, so Enter/Space activation (browser-native for a `<button>`) went untested. The
+create-user field was not exercised in browser because that page needs a database.
+
+**Gap:** no automated test. Vitest runs `environment: 'node'` with no DOM, so this would need jsdom
+and a testing library added to `package.json`.
+
+
 ### 2026-09-21 — Refactor pass + cPanel upload-path fix
 
 **Status:** DONE. Branch `claude/refactor-cpanel-prep`. `npm run verify` green (36 tests, was 25).
