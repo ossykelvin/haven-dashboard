@@ -6,6 +6,7 @@ import { useHavenData } from '@/components/data-provider'
 import { PageHeader, RegisterCard, StatCard, StatGrid } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { APP_ROLES } from '@/lib/menus'
@@ -57,7 +58,7 @@ export function UsersPage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" required />
+          <PasswordInput id="password" name="password" autoComplete="new-password" required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="role">Role</Label>
