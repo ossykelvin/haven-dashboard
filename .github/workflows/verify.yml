@@ -44,9 +44,10 @@ jobs:
         shell: bash
         run: |
           mkdir -p release/haven-cpanel/docs
+          rm -rf .next/cache
           cp -R .next prisma release/haven-cpanel/
           if [ -d public ]; then cp -R public release/haven-cpanel/; fi
-          cp package.json package-lock.json next.config.ts server.js .env.example release/haven-cpanel/
+          cp package.json package-lock.json next.config.ts server.js .env.example .gitignore .cpanel.yml release/haven-cpanel/
           cp docs/DEPLOYMENT.md release/haven-cpanel/docs/
 
       - name: Upload cPanel package
@@ -58,3 +59,32 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+
+  publish-cpanel-branch:
+    if: github.event_name == 'push'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download verified cPanel package
+        uses: actions/download-artifact@v8
+        with:
+          name: haven-cpanel-${{ github.sha }}
+          path: cpanel-release
+
+      - name: Publish prebuilt cPanel branch
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          cd cpanel-release
+          git init --initial-branch=cpanel-release
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add --force .
+          git commit -m "Build cPanel release for $GITHUB_SHA"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin HEAD:cpanel-release

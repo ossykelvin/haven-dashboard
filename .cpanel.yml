@@ -1,0 +1,10 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=$HOME/njtest.koptechnology.co.uk
+    - /bin/mkdir -p "$DEPLOYPATH"
+    - /bin/cp -R .next "$DEPLOYPATH/"
+    - /bin/cp -R prisma "$DEPLOYPATH/"
+    - /bin/cp package.json package-lock.json next.config.ts server.js .env.example "$DEPLOYPATH/"
+    - /bin/mkdir -p "$DEPLOYPATH/tmp"
+    - /usr/bin/touch "$DEPLOYPATH/tmp/restart.txt"

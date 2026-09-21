@@ -2,6 +2,28 @@
 
 GitHub Actions builds Haven because Namecheap's current shared-hosting image does not provide the glibc version required by Next.js 16's native SWC build binary. cPanel runs the already-built application and generates Prisma Client against its own Linux and OpenSSL environment.
 
+## Deploy through cPanel Git Version Control
+
+Every successful push to `main` replaces the `cpanel-release` branch with the verified Linux build. Configure cPanel Git Version Control with:
+
+- Clone URL: `https://github.com/ossykelvin/haven-dashboard.git`
+- Repository path: `/home/koptryzt/repositories/haven-dashboard`
+- Branch: `cpanel-release`
+
+The repository path must remain separate from the Node application root (`/home/koptryzt/njtest.koptechnology.co.uk`). The checked-in `.cpanel.yml` copies the prebuilt application into that root and touches Passenger's restart marker.
+
+Because the repository is private, configure GitHub authentication for the cPanel clone using a read-only deploy key. Do not place a token in the clone URL or commit credentials.
+
+After adding or updating the repository in cPanel:
+
+1. Click **Update from Remote**.
+2. Confirm the checked-out branch has no uncommitted changes.
+3. Click **Deploy HEAD Commit**.
+4. On the first deployment, or whenever dependencies change, open **Setup Node.js App** and click **Run NPM Install**.
+5. Click **Restart** in **Setup Node.js App**.
+
+Do not point cPanel Git Version Control at `main`; that branch contains source code rather than the prebuilt `.next` application.
+
 ## Download the package
 
 1. Open the repository's **Actions** tab.

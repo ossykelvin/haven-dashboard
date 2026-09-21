@@ -412,6 +412,12 @@ Authoritative verification is CI on #20: clean `npm ci` + `npm run verify` on a 
 
 ## Codex
 
+### 2026-09-21 — Codex — cPanel Git deployment branch
+
+**Status:** IN PROGRESS
+
+Adding a valid `.cpanel.yml` and extending GitHub Actions to publish the verified Linux build to a dedicated `cpanel-release` branch for cPanel Git Version Control. The cPanel repository checkout remains separate from the Node application root so deployment does not mutate its own tracked working tree.
+
 ### 2026-09-21 — Codex — GitHub-to-cPanel build handoff
 
 **Status:** DONE
