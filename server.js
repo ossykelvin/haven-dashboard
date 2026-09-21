@@ -11,8 +11,6 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 const app = next({ dev: false, hostname, port })
 const handle = app.getRequestHandler()
 
-await app.prepare()
-
 const server = createServer((request, response) => {
   void handle(request, response)
 })
@@ -22,6 +20,17 @@ server.on('error', (error) => {
   process.exit(1)
 })
 
-server.listen(port, hostname, () => {
-  console.log(`Haven is listening on ${hostname}:${port}`)
-})
+// Deliberately no top-level await. Phusion Passenger boots the startup file with `require()`, and
+// Node refuses to `require()` an ES module whose graph contains top-level await
+// (ERR_REQUIRE_ASYNC_MODULE) — the app would never boot and Passenger would answer 503.
+app.prepare().then(
+  () => {
+    server.listen(port, hostname, () => {
+      console.log(`Haven is listening on ${hostname}:${port}`)
+    })
+  },
+  (error) => {
+    console.error('Haven failed to prepare:', error)
+    process.exit(1)
+  }
+)
