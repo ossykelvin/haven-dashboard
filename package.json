@@ -14,12 +14,12 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
     "db:up": "docker compose up -d",
     "db:migrate": "prisma db push",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force",
-    "verify": "prisma generate && npm run lint && npm test && npm run typecheck && npm run build"
+    "verify": "npm run prisma:generate && npm run lint && npm test && npm run typecheck && npm run build"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

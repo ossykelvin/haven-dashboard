@@ -55,11 +55,11 @@ Upload and extract the artifact into the application root, then activate the Nod
 ```bash
 cd /home/CPANEL_USER/APPLICATION_ROOT
 npm install --omit=dev
-npx prisma generate
+npm run prisma:generate
 npm run start:cpanel
 ```
 
-For a cPanel-managed process, use the **Restart** action instead of leaving `npm run start:cpanel` attached to the terminal. `prisma` is a production dependency so that cPanel can generate the correct query engine even though build-only packages are omitted.
+For a cPanel-managed process, use the **Restart** action instead of leaving `npm run start:cpanel` attached to the terminal. `prisma` is a production dependency so that cPanel can generate the correct query engine even though build-only packages are omitted. Prisma generation is deliberately not an npm `postinstall` lifecycle: CloudLinux runs lifecycle commands from its separate `nodevenv` library directory, so generate it explicitly from the application root as shown above.
 
 The current repository does not contain committed Prisma migrations. Do not use `prisma db push` automatically against a production database. Establish reviewed migrations and backups before introducing real persistent data.
 
