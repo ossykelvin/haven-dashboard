@@ -10,7 +10,8 @@ Every successful push to `main` replaces the `cpanel-release` branch with the ve
 - Repository path: `/home/koptryzt/repositories/haven-dashboard`
 - Branch: `cpanel-release`
 
-The repository path must remain separate from the Node application root (`/home/koptryzt/njtest.koptechnology.co.uk`). The checked-in `.cpanel.yml` copies the prebuilt application into that root and touches Passenger's restart marker.
+The repository path (`/home/koptryzt/repositories/haven-dashboard`) must remain separate from the
+Node application root (`/home/koptryzt/njtest.koptechnology.co.uk`). The checked-in `.cpanel.yml` copies the prebuilt application into that root and touches Passenger's restart marker.
 
 The deployment descriptor also tolerates an existing checkout located directly in the application root by skipping copies whose source and destination are the same. `.htaccess` and `tmp/` are ignored because cPanel and Passenger manage them at runtime; they must not make the checked-out branch dirty.
 
@@ -46,7 +47,23 @@ In **Setup Node.js App**:
 - Set the application root to the directory containing `package.json`.
 - Set the startup file to `server.js`.
 - Add the variables documented in `.env.example`. Use a long random `AUTH_SECRET`, and never commit it.
-- Set `UPLOAD_DIR` to a persistent directory outside any directory replaced during deployment.
+- Set `UPLOAD_DIR` to a persistent directory **outside** the application root, because `.cpanel.yml`
+  overwrites the application root on every deployment. On this host use:
+
+  ```
+  UPLOAD_DIR=/home/koptryzt/haven-uploads
+  ```
+
+  Create it once and keep it out of both the checkout and the application root:
+
+  ```bash
+  mkdir -p /home/koptryzt/haven-uploads
+  chmod 700 /home/koptryzt/haven-uploads
+  ```
+
+  A relative value resolves against the application root, which is only appropriate for local
+  development. When the variable is unset the application falls back to `uploads/` beneath the
+  application root; on cPanel that directory does not survive a release.
 
 Create a restricted MySQL user for Haven and use it in `DATABASE_URL`. The database and upload directory must be backed up separately from application releases.
 

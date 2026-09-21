@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -48,26 +48,9 @@ import {
   TRAINING_FREQUENCIES,
   TRAINING_STATUSES
 } from '@/lib/constants'
-import {
-  assetSchema,
-  auditSchema,
-  complianceSchema,
-  documentSchema,
-  enquirySchema,
-  firstSchemaError,
-  incidentSchema,
-  maintenanceSchema,
-  medicationSchema,
-  residentSchema,
-  riskSchema,
-  rotaSchema,
-  staffSchema,
-  trainingSchema,
-  type CreateKind
-} from '@/lib/schemas'
+import { firstSchemaError, schemas, type CreateKind } from '@/lib/schemas'
 import { nativeSelectClassName, nativeTextareaClassName } from '@/components/shared'
 import { cn } from '@/lib/utils'
-import type { z } from 'zod'
 
 type Field = {
   name: string
@@ -272,19 +255,6 @@ const configurations: Record<CreateKind, { title: string; description: string; s
   }
 }
 
-function bindCreate<T>(schema: z.ZodType<T>, create: (data: T) => Promise<void> | void) {
-  return async (values: unknown) => {
-    const result = schema.safeParse(values)
-    if (!result.success) return firstSchemaError(result.error)
-    try {
-      await create(result.data)
-      return null
-    } catch (error) {
-      return error instanceof Error ? error.message : 'Could not save'
-    }
-  }
-}
-
 function FormField({ field }: { field: Field }) {
   const id = `create-${field.name}`
   return (
@@ -324,62 +294,22 @@ function FormField({ field }: { field: Field }) {
 export function CreateDialog({ kind, children }: { kind: CreateKind; children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
-  const {
-    addResident,
-    addStaff,
-    addAudit,
-    addCompliance,
-    addIncident,
-    addAsset,
-    addMedication,
-    addRotaShift,
-    addTraining,
-    addMaintenance,
-    addRisk,
-    addDocument,
-    addEnquiry
-  } = useHavenData()
+  const { createRecord } = useHavenData()
   const configuration = configurations[kind]
-  const submitters = useMemo(
-    () => ({
-      resident: bindCreate(residentSchema, addResident),
-      staff: bindCreate(staffSchema, addStaff),
-      audit: bindCreate(auditSchema, addAudit),
-      compliance: bindCreate(complianceSchema, addCompliance),
-      incident: bindCreate(incidentSchema, addIncident),
-      asset: bindCreate(assetSchema, addAsset),
-      medication: bindCreate(medicationSchema, addMedication),
-      rota: bindCreate(rotaSchema, addRotaShift),
-      training: bindCreate(trainingSchema, addTraining),
-      maintenance: bindCreate(maintenanceSchema, addMaintenance),
-      risk: bindCreate(riskSchema, addRisk),
-      document: bindCreate(documentSchema, addDocument),
-      enquiry: bindCreate(enquirySchema, addEnquiry)
-    }),
-    [
-      addAsset,
-      addAudit,
-      addCompliance,
-      addDocument,
-      addEnquiry,
-      addIncident,
-      addMaintenance,
-      addMedication,
-      addResident,
-      addRisk,
-      addRotaShift,
-      addStaff,
-      addTraining
-    ]
-  )
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const form = event.currentTarget
     setError('')
-    const message = await submitters[kind](Object.fromEntries(new FormData(form)))
-    if (message) {
-      setError(message)
+    const parsed = schemas[kind].safeParse(Object.fromEntries(new FormData(form)))
+    if (!parsed.success) {
+      setError(firstSchemaError(parsed.error))
+      return
+    }
+    try {
+      await createRecord(kind, parsed.data)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Could not save')
       return
     }
 

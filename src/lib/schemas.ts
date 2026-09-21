@@ -180,6 +180,9 @@ export const schemas = {
 
 export type CreateKind = keyof typeof schemas
 
+/** Validated payload for a given create kind, or the union of all of them. */
+export type CreateInput<K extends CreateKind = CreateKind> = z.infer<(typeof schemas)[K]>
+
 export function firstSchemaError(error: z.ZodError) {
   return error.issues[0]?.message ?? 'Check the form and try again'
 }

@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
 import { hasRole } from '@/lib/menus'
 import { prisma } from '@/lib/server/db'
-import { requireMenu, requireSession } from '@/lib/server/auth'
+import { withMenu } from '@/lib/server/route'
 
-export async function GET() {
-  const { session, response } = await requireSession()
-  if (!session) return response
-  const denied = await requireMenu(session, 'change-audit')
-  if (denied) return denied
+export const GET = withMenu('change-audit', async (_request, session) => {
   const events = hasRole(session.roles, 'admin')
     ? await prisma.changeAudit.findMany({ orderBy: { eventAt: 'desc' }, take: 200 })
     : await prisma.changeAudit.findMany({
@@ -16,4 +12,4 @@ export async function GET() {
         take: 200
       })
   return NextResponse.json(events)
-}
+})

@@ -3,8 +3,9 @@ import { z } from 'zod'
 import { APP_ROLES } from '@/lib/menus'
 import { passwordPolicyError } from '@/lib/password-policy'
 import { prisma } from '@/lib/server/db'
-import { hashPassword, isManagerLike, requireMenu, requireSession } from '@/lib/server/auth'
+import { hashPassword, isManagerLike } from '@/lib/server/auth'
 import { writeChangeAudit } from '@/lib/server/audit'
+import { withMenu } from '@/lib/server/route'
 
 const createUserSchema = z.object({
   email: z
@@ -18,11 +19,7 @@ const createUserSchema = z.object({
   campusId: z.string().uuid()
 })
 
-export async function GET() {
-  const { session, response } = await requireSession()
-  if (!session) return response
-  const denied = await requireMenu(session, 'users')
-  if (denied) return denied
+export const GET = withMenu('users', async () => {
   const [profiles, roles, emails] = await Promise.all([
     prisma.profile.findMany({ where: { deletedAt: null } }),
     prisma.userRole.findMany(),
@@ -39,13 +36,9 @@ export async function GET() {
       email: emails.find(row => row.userId === profile.userId)?.emailLower ?? null
     }))
   )
-}
+})
 
-export async function POST(request: Request) {
-  const { session, response } = await requireSession()
-  if (!session) return response
-  const denied = await requireMenu(session, 'users')
-  if (denied) return denied
+export const POST = withMenu('users', async (request, session) => {
   if (!isManagerLike(session.roles)) {
     return NextResponse.json({ error: 'Only admins and managers can create users' }, { status: 403 })
   }
@@ -85,4 +78,4 @@ export async function POST(request: Request) {
     newValues: { email, role: parsed.data.role }
   })
   return NextResponse.json({ id: userId }, { status: 201 })
-}
+})

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/server/db'
-import { requireMenu, requireSession } from '@/lib/server/auth'
+import { withMenu } from '@/lib/server/route'
 
 const sendSchema = z.object({
   conversationId: z.string().uuid(),
@@ -12,11 +12,7 @@ const startSchema = z.object({
   userId: z.string().uuid()
 })
 
-export async function POST(request: Request) {
-  const { session, response } = await requireSession()
-  if (!session) return response
-  const denied = await requireMenu(session, 'chat')
-  if (denied) return denied
+export const POST = withMenu('chat', async (request, session) => {
   const body = await request.json().catch(() => null)
   if (body?.userId) {
     const parsed = startSchema.safeParse(body)
@@ -57,4 +53,4 @@ export async function POST(request: Request) {
     data: { updatedAt: new Date() }
   })
   return NextResponse.json(message, { status: 201 })
-}
+})

@@ -2,136 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import {
-  AlertTriangle,
-  Bell,
-  Building2,
-  CalendarCheck,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardCheck,
-  FileBarChart,
-  FileText,
-  Gauge,
-  GraduationCap,
-  History,
-  Inbox,
-  ListChecks,
-  LogOut,
-  Mail,
-  MapPin,
-  Menu,
-  MessageCircle,
-  Pill,
-  CalendarDays,
-  Settings,
-  Shield,
-  ShieldAlert,
-  Stethoscope,
-  Upload,
-  Users,
-  Wrench,
-  X,
-  type LucideIcon
-} from 'lucide-react'
-import { type ComponentType, useState } from 'react'
+import { Bell, Building2, ChevronLeft, ChevronRight, LogOut, Menu, X } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useHavenData } from '@/components/data-provider'
+import { DashboardPage } from '@/components/pages/dashboard-page'
+import { NAV_ITEMS_BY_PATH, NAV_SECTIONS, canOpenMenu, type NavItem } from '@/components/navigation'
 import { cn, initials } from '@/lib/utils'
 import { unreadNotificationCount } from '@/lib/metrics'
-import { DashboardPage } from '@/components/pages/dashboard-page'
-import { CompliancePage } from '@/components/pages/compliance-page'
-import { ResidentsPage } from '@/components/pages/residents-page'
-import { StaffPage } from '@/components/pages/staff-page'
-import { AuditsPage } from '@/components/pages/audits-page'
-import { ReportsPage } from '@/components/pages/reports-page'
-import { IncidentsPage } from '@/components/pages/incidents-page'
-import { AssetsPage } from '@/components/pages/assets-page'
-import { NotificationsPage } from '@/components/pages/notifications-page'
-import { RotaPage } from '@/components/pages/rota-page'
-import { MedicationPage } from '@/components/pages/medication-page'
-import { TrainingPage } from '@/components/pages/training-page'
-import { MaintenancePage } from '@/components/pages/maintenance-page'
-import { RisksPage } from '@/components/pages/risks-page'
-import { DocumentsPage } from '@/components/pages/documents-page'
-import { EnquiriesPage } from '@/components/pages/enquiries-page'
-import { CqcPage } from '@/components/pages/cqc-page'
-import { UsersPage } from '@/components/pages/users-page'
-import { RolesPage } from '@/components/pages/roles-page'
-import { CampusesPage } from '@/components/pages/campuses-page'
-import { DataImportPage } from '@/components/pages/data-import-page'
-import { EmailsPage } from '@/components/pages/emails-page'
-import { ChangeAuditPage } from '@/components/pages/change-audit-page'
-import { MessagesPage } from '@/components/pages/messages-page'
-import { SettingsPage } from '@/components/pages/settings-page'
-import { MyTrainingsPage } from '@/components/pages/my-trainings-page'
-
-type NavItem = {
-  name: string
-  href: string
-  icon: LucideIcon
-  eyebrow: string
-  Page: ComponentType
-  menuKey: string
-}
-
-const overviewNav: NavItem[] = [
-  { name: 'Dashboard', href: '/', icon: Gauge, eyebrow: 'Home overview', Page: DashboardPage, menuKey: 'dashboard' }
-]
-
-const operationsNav: NavItem[] = [
-  { name: 'Residents', href: '/residents', icon: Users, eyebrow: 'Care records', Page: ResidentsPage, menuKey: 'residents' },
-  { name: 'Rota', href: '/rota', icon: CalendarDays, eyebrow: 'Workforce cover', Page: RotaPage, menuKey: 'rota' },
-  { name: 'Staff', href: '/staff', icon: Stethoscope, eyebrow: 'Workforce', Page: StaffPage, menuKey: 'staff' },
-  { name: 'Medication', href: '/medication', icon: Pill, eyebrow: 'MAR chart', Page: MedicationPage, menuKey: 'medication' },
-  { name: 'My Trainings', href: '/my-trainings', icon: GraduationCap, eyebrow: 'My learning', Page: MyTrainingsPage, menuKey: 'my-trainings' },
-  { name: 'Training', href: '/training', icon: GraduationCap, eyebrow: 'Workforce learning', Page: TrainingPage, menuKey: 'training' },
-  { name: 'Assets', href: '/assets', icon: Wrench, eyebrow: 'Equipment register', Page: AssetsPage, menuKey: 'assets' },
-  { name: 'Maintenance', href: '/maintenance', icon: CalendarCheck, eyebrow: 'Planned work', Page: MaintenancePage, menuKey: 'maintenance' },
-  { name: 'Messages', href: '/chat', icon: MessageCircle, eyebrow: 'Team messages', Page: MessagesPage, menuKey: 'chat' },
-  { name: 'Notifications', href: '/notifications', icon: Bell, eyebrow: 'Updates & alerts', Page: NotificationsPage, menuKey: 'notifications' }
-]
-
-const enquiriesNav: NavItem[] = [
-  { name: 'Enquiries', href: '/enquiries', icon: Inbox, eyebrow: 'Admissions pipeline', Page: EnquiriesPage, menuKey: 'enquiries' }
-]
-
-const complianceNav: NavItem[] = [
-  { name: 'CQC', href: '/cqc', icon: ListChecks, eyebrow: 'Inspection readiness', Page: CqcPage, menuKey: 'cqc-checks' },
-  {
-    name: 'Compliance Checks',
-    href: '/compliance-checks',
-    icon: ClipboardCheck,
-    eyebrow: 'Quality & compliance',
-    Page: CompliancePage,
-    menuKey: 'compliance'
-  },
-  { name: 'Documents', href: '/documents', icon: FileText, eyebrow: 'Evidence register', Page: DocumentsPage, menuKey: 'documents' },
-  { name: 'Incidents', href: '/incidents', icon: AlertTriangle, eyebrow: 'Safety management', Page: IncidentsPage, menuKey: 'incidents' },
-  { name: 'Risks', href: '/risks', icon: ShieldAlert, eyebrow: 'Risk register', Page: RisksPage, menuKey: 'risks' },
-  { name: 'Audits', href: '/audits', icon: CalendarCheck, eyebrow: 'Quality assurance', Page: AuditsPage, menuKey: 'audit' },
-  { name: 'Reports', href: '/reports', icon: FileBarChart, eyebrow: 'Insights', Page: ReportsPage, menuKey: 'reporting' }
-]
-
-const adminNav: NavItem[] = [
-  { name: 'Roles', href: '/roles', icon: Shield, eyebrow: 'Menu grants', Page: RolesPage, menuKey: 'roles' },
-  { name: 'Users', href: '/users', icon: Users, eyebrow: 'Accounts', Page: UsersPage, menuKey: 'users' },
-  { name: 'Campuses', href: '/campuses', icon: MapPin, eyebrow: 'Sites', Page: CampusesPage, menuKey: 'campuses' },
-  { name: 'Data Import', href: '/data-import', icon: Upload, eyebrow: 'CSV load', Page: DataImportPage, menuKey: 'data-import' },
-  { name: 'Emails', href: '/email-templates', icon: Mail, eyebrow: 'Templates', Page: EmailsPage, menuKey: 'email-templates' },
-  { name: 'Settings', href: '/settings', icon: Settings, eyebrow: 'Session', Page: SettingsPage, menuKey: 'settings' },
-  { name: 'Change Audit', href: '/change-audit', icon: History, eyebrow: 'Immutable log', Page: ChangeAuditPage, menuKey: 'change-audit' }
-]
-
-const navSections = [
-  { label: 'Overview', items: overviewNav },
-  { label: 'Operations', items: operationsNav },
-  { label: 'Enquiries', items: enquiriesNav },
-  { label: 'Compliance', items: complianceNav },
-  { label: 'Administration', items: adminNav }
-]
-
-const pagesByPath = Object.fromEntries(navSections.flatMap(section => section.items).map(item => [item.href, item]))
 
 function Navigation({
   items,
@@ -187,12 +65,10 @@ function Sidebar({
   const { session } = useHavenData()
   const router = useRouter()
   const menus = session?.menus ?? []
-  const visibleSections = navSections
-    .map(section => ({
-      ...section,
-      items: section.items.filter(item => menus.includes(item.menuKey) || item.menuKey === 'my-trainings')
-    }))
-    .filter(section => section.items.length)
+  const visibleSections = NAV_SECTIONS.map(section => ({
+    ...section,
+    items: section.items.filter(item => canOpenMenu(menus, item.menuKey))
+  })).filter(section => section.items.length)
 
   const signOut = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -284,9 +160,9 @@ function Sidebar({
 
 function CurrentPage({ pathname }: { pathname: string }) {
   const { session } = useHavenData()
-  const item = pagesByPath[pathname]
+  const item = NAV_ITEMS_BY_PATH[pathname]
   if (!item) return <DashboardPage />
-  if (session && !session.menus.includes(item.menuKey) && item.menuKey !== 'my-trainings') {
+  if (session && !canOpenMenu(session.menus, item.menuKey)) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600">
         You do not have access to this module.
@@ -303,7 +179,7 @@ export function HavenApp() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const data = useHavenData()
   const unread = unreadNotificationCount(data)
-  const meta = pagesByPath[pathname] ?? pagesByPath['/']
+  const meta = NAV_ITEMS_BY_PATH[pathname] ?? NAV_ITEMS_BY_PATH['/']
 
   if (data.loading) {
     return <div className="grid min-h-screen place-items-center text-sm text-slate-500">Loading Haven…</div>

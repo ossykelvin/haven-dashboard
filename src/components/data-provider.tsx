@@ -2,24 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import type { z } from 'zod'
 import { initialData } from '@/lib/mock-data'
-import type {
-  assetSchema,
-  auditSchema,
-  complianceSchema,
-  documentSchema,
-  enquirySchema,
-  incidentSchema,
-  maintenanceSchema,
-  medicationSchema,
-  residentSchema,
-  riskSchema,
-  rotaSchema,
-  staffSchema,
-  trainingSchema,
-  CreateKind
-} from '@/lib/schemas'
+import type { CreateInput, CreateKind } from '@/lib/schemas'
 import type { HavenData } from '@/lib/types'
 
 export type PublicSession = {
@@ -107,8 +91,6 @@ export type EnquiryVisit = {
   visitAt: string | null
 }
 
-type AddFn<T> = (input: T) => Promise<void>
-
 interface HavenDataContextValue extends HavenData {
   session: PublicSession | null
   loading: boolean
@@ -123,19 +105,7 @@ interface HavenDataContextValue extends HavenData {
   enquiryTasks: EnquiryTask[]
   enquiryVisits: EnquiryVisit[]
   refresh: () => Promise<void>
-  addResident: AddFn<z.infer<typeof residentSchema>>
-  addStaff: AddFn<z.infer<typeof staffSchema>>
-  addAudit: AddFn<z.infer<typeof auditSchema>>
-  addCompliance: AddFn<z.infer<typeof complianceSchema>>
-  addIncident: AddFn<z.infer<typeof incidentSchema>>
-  addAsset: AddFn<z.infer<typeof assetSchema>>
-  addMedication: AddFn<z.infer<typeof medicationSchema>>
-  addRotaShift: AddFn<z.infer<typeof rotaSchema>>
-  addTraining: AddFn<z.infer<typeof trainingSchema>>
-  addMaintenance: AddFn<z.infer<typeof maintenanceSchema>>
-  addRisk: AddFn<z.infer<typeof riskSchema>>
-  addDocument: AddFn<z.infer<typeof documentSchema>>
-  addEnquiry: AddFn<z.infer<typeof enquirySchema>>
+  createRecord: (kind: CreateKind, input: CreateInput) => Promise<void>
   markNotificationRead: (id: string) => Promise<void>
   markAllNotificationsRead: () => Promise<void>
   deleteNotification: (id: string) => Promise<void>
@@ -201,29 +171,18 @@ export function HavenDataProvider({ children }: { children: ReactNode }) {
     void refresh()
   }, [refresh])
 
-  const postRecord = useCallback(async (kind: CreateKind, input: unknown) => {
-    const response = await fetch(`/api/records/${kind}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input)
-    })
-    if (!response.ok) await readError(response)
-    await refresh()
-  }, [refresh])
-
-  const addResident = useCallback((input: z.infer<typeof residentSchema>) => postRecord('resident', input), [postRecord])
-  const addStaff = useCallback((input: z.infer<typeof staffSchema>) => postRecord('staff', input), [postRecord])
-  const addAudit = useCallback((input: z.infer<typeof auditSchema>) => postRecord('audit', input), [postRecord])
-  const addCompliance = useCallback((input: z.infer<typeof complianceSchema>) => postRecord('compliance', input), [postRecord])
-  const addIncident = useCallback((input: z.infer<typeof incidentSchema>) => postRecord('incident', input), [postRecord])
-  const addAsset = useCallback((input: z.infer<typeof assetSchema>) => postRecord('asset', input), [postRecord])
-  const addMedication = useCallback((input: z.infer<typeof medicationSchema>) => postRecord('medication', input), [postRecord])
-  const addRotaShift = useCallback((input: z.infer<typeof rotaSchema>) => postRecord('rota', input), [postRecord])
-  const addTraining = useCallback((input: z.infer<typeof trainingSchema>) => postRecord('training', input), [postRecord])
-  const addMaintenance = useCallback((input: z.infer<typeof maintenanceSchema>) => postRecord('maintenance', input), [postRecord])
-  const addRisk = useCallback((input: z.infer<typeof riskSchema>) => postRecord('risk', input), [postRecord])
-  const addDocument = useCallback((input: z.infer<typeof documentSchema>) => postRecord('document', input), [postRecord])
-  const addEnquiry = useCallback((input: z.infer<typeof enquirySchema>) => postRecord('enquiry', input), [postRecord])
+  const createRecord = useCallback(
+    async (kind: CreateKind, input: CreateInput) => {
+      const response = await fetch(`/api/records/${kind}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input)
+      })
+      if (!response.ok) await readError(response)
+      await refresh()
+    },
+    [refresh]
+  )
 
   const markNotificationRead = useCallback(async (id: string) => {
     await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
@@ -265,19 +224,7 @@ export function HavenDataProvider({ children }: { children: ReactNode }) {
       enquiryTasks,
       enquiryVisits,
       refresh,
-      addResident,
-      addStaff,
-      addAudit,
-      addCompliance,
-      addIncident,
-      addAsset,
-      addMedication,
-      addRotaShift,
-      addTraining,
-      addMaintenance,
-      addRisk,
-      addDocument,
-      addEnquiry,
+      createRecord,
       markNotificationRead,
       markAllNotificationsRead,
       deleteNotification
@@ -297,19 +244,7 @@ export function HavenDataProvider({ children }: { children: ReactNode }) {
       enquiryTasks,
       enquiryVisits,
       refresh,
-      addResident,
-      addStaff,
-      addAudit,
-      addCompliance,
-      addIncident,
-      addAsset,
-      addMedication,
-      addRotaShift,
-      addTraining,
-      addMaintenance,
-      addRisk,
-      addDocument,
-      addEnquiry,
+      createRecord,
       markNotificationRead,
       markAllNotificationsRead,
       deleteNotification

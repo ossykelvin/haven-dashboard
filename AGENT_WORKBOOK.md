@@ -153,6 +153,67 @@ Collapsed duplicated register-page, create-dialog, persistence, and domain-optio
 
 ## Claude
 
+### 2026-09-21 — Refactor pass + cPanel upload-path fix
+
+**Status:** DONE. Branch `claude/refactor-cpanel-prep`. `npm run verify` green (36 tests, was 25).
+
+Deployment to `/home/koptryzt/repositories/haven-dashboard` (checkout) and
+`/home/koptryzt/njtest.koptechnology.co.uk` (Passenger app root) was already wired by Codex via
+`.cpanel.yml` + the `cpanel-release` branch. This pass does not rebuild that; it fixes one real
+defect in it and removes duplication that the deployment made more expensive to carry.
+
+Planned:
+
+1. `UPLOAD_DIR` is documented in `.env.example` and `docs/DEPLOYMENT.md` but **never read**. Both
+   document routes hardcode `process.cwd()/uploads`, which on cPanel sits inside the directory
+   `.cpanel.yml` overwrites on every deploy. Add `src/lib/server/uploads.ts` and honour the variable.
+2. 16 API handlers repeat the same 4-line session/menu preamble. Extract a guard wrapper.
+3. 13 near-identical `addX` context functions exist solely to be re-bound to their own schema in
+   `create-dialog.tsx`. Collapse to one `createRecord(kind, input)`; `schemas[kind]` already exists.
+4. Lift the navigation registry out of `haven-app.tsx`; the `my-trainings` access exception is
+   currently duplicated in two places and can drift.
+
+Done, plus two defects found on the way:
+
+- **Uploads never created their campus directory.** `documents/upload` ran
+  `mkdir(uploadRoot)` and then wrote to `uploadRoot/<campusId>/<file>`, which does not exist on a
+  fresh install — every first upload for a campus would have failed with `ENOENT`. Now it creates
+  `dirname(destination)`. Not caught earlier because no test covers the filesystem write.
+- **`UPLOAD_DIR` was documented but unread.** `src/lib/server/uploads.ts` now resolves it, and
+  `resolveUploadPath` refuses a stored path that escapes the root, so a traversal sequence written
+  by some future bug cannot become an arbitrary file read.
+
+Files touched: `src/lib/server/{uploads,route}.ts` (new), `src/components/navigation.ts` (new),
+`src/components/{haven-app,data-provider,create-dialog}.tsx`, `src/lib/schemas.ts`,
+all 11 route files under `src/app/api/`, `tests/{uploads,navigation}.test.ts` (new),
+`docs/{CODEMAP,DEPLOYMENT}.md`, `.env.example`.
+
+**Not verified:** authenticated browser flows. The Docker daemon was not running on this machine, so
+MySQL could not be started and no signed-in page was exercised. Verified instead: login renders,
+`/` redirects to it, and all 16 guarded handlers return 401 unauthenticated. Someone with the
+database up should smoke-test a create dialog and a document upload before this is relied on.
+
+### 2026-09-21 — Passenger 503: top-level await in `server.js`
+
+The deployed site returned 503. Cause was not this refactor (nothing had been pushed): `server.js`
+used a top-level `await app.prepare()` in an ESM module. Passenger boots the startup file with
+`require()`, and Node refuses to `require()` an ES module whose graph contains top-level await.
+
+Measured on Node 24, the version the cPanel app uses:
+
+```
+OLD server.js: FAILED -> ERR_REQUIRE_ASYNC_MODULE
+NEW server.js: loaded OK, listening, /login 200, / 307
+```
+
+`app.prepare().then(...)` replaces the top-level await. Keep it that way: any future top-level
+await in this file, or in anything it imports, takes the site down with a 503 and no page output.
+
+**Left alone deliberately:** the whole product still renders through one `[[...slug]]` client route,
+so navigation is client-side and every page ships in one bundle. Changing that is an architecture
+decision needing an ADR, not a refactor.
+
+
 ### 2026-08-17 — RATA-006/007 — Graph scope proposal, and an ADR number collision
 
 **Status:** ADR-017 written, **blocked on the user**. Branch `claude/RATA-006-graph-scope-proposal`.

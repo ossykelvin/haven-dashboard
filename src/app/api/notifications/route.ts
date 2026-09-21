@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/server/db'
-import { requireSession } from '@/lib/server/auth'
 import { writeChangeAudit } from '@/lib/server/audit'
+import { withSession } from '@/lib/server/route'
 
-export async function PATCH(request: Request) {
-  const { session, response } = await requireSession()
-  if (!session) return response
+export const PATCH = withSession(async (request, session) => {
   const body = (await request.json().catch(() => null)) as { id?: string; all?: boolean } | null
   if (body?.all) {
     await prisma.notification.updateMany({ where: { userId: session.sub }, data: { isRead: true } })
@@ -21,14 +19,12 @@ export async function PATCH(request: Request) {
   if (!body?.id) return NextResponse.json({ error: 'Notification id required' }, { status: 400 })
   await prisma.notification.updateMany({ where: { id: body.id, userId: session.sub }, data: { isRead: true } })
   return NextResponse.json({ ok: true })
-}
+})
 
-export async function DELETE(request: Request) {
-  const { session, response } = await requireSession()
-  if (!session) return response
+export const DELETE = withSession(async (request, session) => {
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'Notification id required' }, { status: 400 })
   await prisma.notification.deleteMany({ where: { id, userId: session.sub } })
   return NextResponse.json({ ok: true })
-}
+})

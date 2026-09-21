@@ -2,16 +2,18 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/server/db'
-import { requireMenu, requireSession } from '@/lib/server/auth'
 import { writeChangeAudit } from '@/lib/server/audit'
+import { withMenu } from '@/lib/server/route'
+import { resolveUploadPath } from '@/lib/server/uploads'
 
-const allowed = new Set(['application/pdf', 'image/png', 'image/jpeg', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+const allowed = new Set([
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+])
 
-export async function POST(request: Request) {
-  const { session, response } = await requireSession()
-  if (!session) return response
-  const denied = await requireMenu(session, 'documents')
-  if (denied) return denied
+export const POST = withMenu('documents', async (request, session) => {
   const form = await request.formData()
   const title = String(form.get('title') || '').trim()
   const category = String(form.get('category') || 'Evidence')
@@ -26,18 +28,18 @@ export async function POST(request: Request) {
   if (file.type && !allowed.has(file.type)) {
     return NextResponse.json({ error: 'Use a PDF, PNG, JPEG, or DOCX file' }, { status: 400 })
   }
-  const uploadRoot = path.join(process.cwd(), 'uploads')
-  await mkdir(/* turbopackIgnore: true */ uploadRoot, { recursive: true })
   const storedName = `${crypto.randomUUID()}${path.extname(file.name)}`
   const relativePath = path.posix.join(session.campusId || 'home', storedName)
-  await writeFile(/* turbopackIgnore: true */ path.join(uploadRoot, relativePath), Buffer.from(await file.arrayBuffer()))
+  const destination = resolveUploadPath(relativePath)
+  await mkdir(/* turbopackIgnore: true */ path.dirname(destination), { recursive: true })
+  await writeFile(/* turbopackIgnore: true */ destination, Buffer.from(await file.arrayBuffer()))
   const row = await prisma.document.create({
     data: {
       id: crypto.randomUUID(),
       title,
       category,
       documentType,
-      filePath: relativePath.replaceAll('\\', '/'),
+      filePath: relativePath,
       fileName: file.name,
       fileSize: BigInt(file.size),
       mimeType: file.type || null,
@@ -55,4 +57,4 @@ export async function POST(request: Request) {
     newValues: { title, fileName: file.name }
   })
   return NextResponse.json({ id: row.refNo || row.id, title: row.title }, { status: 201 })
-}
+})
