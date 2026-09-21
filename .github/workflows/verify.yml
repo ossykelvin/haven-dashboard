@@ -1,0 +1,91 @@
+# Runs Haven's lint, tests, typecheck, and production build.
+name: verify
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A newer push to the same branch cancels the older in-flight run.
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the branch
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      # `npm ci` installs exactly the committed lockfile. Never `npm install`
+      # in CI: it can silently resolve different versions than the developer had.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify
+        run: npm run verify
+
+      - name: Assemble cPanel package
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          mkdir -p release/haven-cpanel/docs
+          rm -rf .next/cache
+          cp -R .next prisma release/haven-cpanel/
+          if [ -d public ]; then cp -R public release/haven-cpanel/; fi
+          cp package.json package-lock.json next.config.mjs server.js .env.example .gitignore .cpanel.yml release/haven-cpanel/
+          cp docs/DEPLOYMENT.md release/haven-cpanel/docs/
+
+      - name: Upload cPanel package
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: haven-cpanel-${{ github.sha }}
+          path: release/haven-cpanel
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-cpanel-branch:
+    if: github.event_name == 'push'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download verified cPanel package
+        uses: actions/download-artifact@v8
+        with:
+          name: haven-cpanel-${{ github.sha }}
+          path: cpanel-package
+
+      - name: Publish prebuilt cPanel branch
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git clone --branch cpanel-release "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" cpanel-release
+          cd cpanel-release
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm -r --ignore-unmatch .
+          cp -a ../cpanel-package/. .
+          git add --force .
+          git commit -m "Build cPanel release for $GITHUB_SHA"
+          git push origin cpanel-release
