@@ -13,6 +13,37 @@ Every successful push to `main` replaces the `cpanel-release` branch with the ve
 The repository path (`/home/koptryzt/repositories/haven-dashboard`) must remain separate from the
 Node application root (`/home/koptryzt/njtest.koptechnology.co.uk`). The checked-in `.cpanel.yml` copies the prebuilt application into that root and touches Passenger's restart marker.
 
+## Build-emitted module links
+
+`next build` writes `.next/node_modules/<scope>/<package>-<hash>` as symlinks containing the build
+machine's **absolute** paths, and Turbopack's server chunks `require()` those packages by the hashed
+name. The links are therefore meaningless on any other machine: left unhandled, every API route
+fails at module evaluation with `Cannot find module '@prisma/client-<hash>'`, while the login page
+still renders, because only the API routes touch the bundle.
+
+CI removes the unusable links from the release package and records them in `relink-externals.sh`,
+which `.cpanel.yml` runs against the application root on every deployment. The hash changes when
+dependencies change, so nothing here is hardcoded.
+
+If API routes return 500 after a deployment, check the links resolve:
+
+```bash
+ls -la /home/koptryzt/njtest.koptechnology.co.uk/.next/node_modules/@prisma/
+```
+
+A broken link, or a missing directory, means `relink-externals.sh` did not run. Re-run it by hand:
+
+```bash
+cd /home/koptryzt/njtest.koptechnology.co.uk && ./relink-externals.sh "$(pwd)"
+```
+
+Confirm the fix without credentials — a healthy deployment answers 400, a broken one 500:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}
+" -X POST https://njtest.koptechnology.co.uk/api/auth/login -H 'Content-Type: application/json' -d '{}'
+```
+
 The deployment descriptor also tolerates an existing checkout located directly in the application root by skipping copies whose source and destination are the same. `.htaccess` and `tmp/` are ignored because cPanel and Passenger manage them at runtime; they must not make the checked-out branch dirty.
 
 The deployment also creates `.htaccess` when it is absent. It does not replace an existing file, because CloudLinux Node.js Selector stores and removes its Passenger directives there when stopping or restarting the application.
@@ -34,7 +65,7 @@ Do not point cPanel Git Version Control at `main`; that branch contains source c
 1. Open the repository's **Actions** tab.
 2. Open the latest successful **verify** run for `main`.
 3. Download the `haven-cpanel-<commit>` artifact.
-4. Extract it locally. The extracted package must contain `.next`, `prisma`, `package.json`, `package-lock.json`, `next.config.mjs`, and `server.js`. It also contains `public` when the application has public assets.
+4. Extract it locally. The extracted package must contain `.next`, `prisma`, `package.json`, `package-lock.json`, `next.config.mjs`, `server.js`, and `relink-externals.sh`. It also contains `public` when the application has public assets.
 
 Do not upload a local `.env`, `node_modules`, `uploads`, or a Windows-built `.next` directory.
 
