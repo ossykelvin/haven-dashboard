@@ -3,7 +3,12 @@ deployment:
   tasks:
     - export DEPLOYPATH=$HOME/njtest.koptechnology.co.uk
     - /bin/mkdir -p "$DEPLOYPATH"
-    - /bin/bash -lc 'if [ "$(pwd -P)" != "$(cd "$HOME/njtest.koptechnology.co.uk" && pwd -P)" ]; then /bin/cp -R .next prisma "$HOME/njtest.koptechnology.co.uk/"; /bin/cp package.json package-lock.json next.config.mjs server.js .env.example "$HOME/njtest.koptechnology.co.uk/"; fi'
+    - /bin/bash -lc 'if [ "$(pwd -P)" != "$(cd "$HOME/njtest.koptechnology.co.uk" && pwd -P)" ]; then /bin/cp -R .next prisma "$HOME/njtest.koptechnology.co.uk/"; /bin/cp package.json package-lock.json next.config.mjs server.js .env.example relink-externals.sh "$HOME/njtest.koptechnology.co.uk/"; fi'
+    # `next build` emits .next/node_modules/<scope>/<pkg>-<hash> as symlinks holding the build
+    # machine's absolute paths, and Turbopack's chunks require them by that hashed name. CI strips
+    # the unusable links and records them in relink-externals.sh; this recreates them here. Without
+    # it every request to an API route fails with "Cannot find module '@prisma/client-<hash>'".
+    - /bin/bash -lc 'cd "$HOME/njtest.koptechnology.co.uk" && if [ -x ./relink-externals.sh ]; then ./relink-externals.sh "$HOME/njtest.koptechnology.co.uk"; else echo "relink-externals.sh is missing: .next module links cannot be restored and API routes will fail." >&2; exit 1; fi'
     - /usr/bin/touch "$HOME/njtest.koptechnology.co.uk/.htaccess"
     - /bin/mkdir -p "$HOME/njtest.koptechnology.co.uk/tmp"
     - /usr/bin/touch "$HOME/njtest.koptechnology.co.uk/tmp/restart.txt"
